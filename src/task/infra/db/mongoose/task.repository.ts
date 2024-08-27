@@ -9,12 +9,16 @@ export class TaskMongooseRepository
   constructor(private taskRepository: typeof Model<TaskDocument>) {}
 
   async findAll(userId: string): Promise<Task[]> {
-    return this.taskRepository.find();
+    return this.taskRepository.find({ 'user.id': userId });
   }
 
   async findById(id: string): Promise<Task> {
     try {
-      return await this.taskRepository.findOne({ _id: id });
+      const task = await this.taskRepository.findOne({ _id: id });
+      return new Task({
+        id: task._id,
+        ...task,
+      });
     } catch {}
   }
 
@@ -23,9 +27,13 @@ export class TaskMongooseRepository
   }
 
   async update(entity: Task): Promise<void> {
-    await this.taskRepository.findByIdAndUpdate(entity.id, entity.toJSON(), {
-      new: true,
-    });
+    await this.taskRepository.findByIdAndUpdate(
+      { _id: entity.id },
+      entity.toJSON(),
+      {
+        new: true,
+      },
+    );
   }
 
   async delete(id: string): Promise<void> {

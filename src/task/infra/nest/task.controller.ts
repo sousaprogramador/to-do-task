@@ -38,15 +38,13 @@ export class TaskController {
   ) {}
 
   @Get()
-  async search() {
-    const output = await this.listUseCase.execute();
+  async search(@Request() req) {
+    const output = await this.listUseCase.execute({ userId: req.user.id });
     return output;
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id', new ParseUUIDPipe({ errorHttpStatusCode: 422 })) id: string,
-  ) {
+  async findOne(@Param('id') id: string) {
     const output = await this.getUseCase.execute({ id });
     return TaskController.TaskPresenterToResponse(output);
   }
@@ -61,10 +59,7 @@ export class TaskController {
   }
 
   @Put(':id')
-  async update(
-    @Param('id', new ParseUUIDPipe({ errorHttpStatusCode: 422 })) id: string,
-    @Body() updateBrandDto: UpdateTaskDto,
-  ) {
+  async update(@Param('id') id: string, @Body() updateBrandDto: UpdateTaskDto) {
     const output = await this.updateUseCase.execute({
       id,
       ...updateBrandDto,

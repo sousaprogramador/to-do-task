@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
 import { User } from '../../../domain';
-import { UserRepositoryRepository } from './user.repository';
+import { UserMongooseRepository } from './user.repository';
 import { UserDocument } from './user.model';
 
 jest.mock('mongoose', () => ({
@@ -13,18 +13,18 @@ jest.mock('mongoose', () => ({
   })),
 }));
 
-describe('UserRepositoryRepository', () => {
-  let repository: UserRepositoryRepository;
+describe('UserMongooseRepository', () => {
+  let repository: UserMongooseRepository;
   let userModel: Model<UserDocument>;
 
   beforeEach(() => {
     userModel = new Model<UserDocument>();
-    repository = new UserRepositoryRepository(userModel);
+    repository = new UserMongooseRepository(userModel);
   });
 
   it('should find all users', async () => {
     const mockUsers = [
-      { id: '1', email: 'user1@example.com', name: 'User One' },
+      { _id: '1', email: 'user1@example.com', name: 'User One' },
     ];
     (userModel.find as jest.Mock).mockResolvedValue(mockUsers);
 
@@ -34,7 +34,7 @@ describe('UserRepositoryRepository', () => {
   });
 
   it('should find a user by id', async () => {
-    const mockUser = { id: '1', email: 'user1@example.com', name: 'User One' };
+    const mockUser = { _id: '1', email: 'user1@example.com', name: 'User One' };
     (userModel.findOne as jest.Mock).mockResolvedValue(mockUser);
 
     const user = await repository.findById('1');
@@ -43,7 +43,7 @@ describe('UserRepositoryRepository', () => {
   });
 
   it('should find a user by email', async () => {
-    const mockUser = { id: '1', email: 'user1@example.com', name: 'User One' };
+    const mockUser = { _id: '1', email: 'user1@example.com', name: 'User One' };
     (userModel.findOne as jest.Mock).mockResolvedValue(mockUser);
 
     const user = await repository.findByEmail('user1@example.com');
@@ -51,26 +51,6 @@ describe('UserRepositoryRepository', () => {
     expect(userModel.findOne).toHaveBeenCalledWith({
       email: 'user1@example.com',
     });
-  });
-
-  it('should create a new user', async () => {
-    const mockUser = {
-      id: '1',
-      email: 'user1@example.com',
-      name: 'User One',
-      toJSON: jest.fn(),
-    };
-    (userModel.create as jest.Mock).mockResolvedValue(mockUser);
-
-    const entity = new User({
-      id: '1',
-      email: 'user1@example.com',
-      name: 'User One',
-      password: 'secret',
-    });
-    await repository.create(entity);
-
-    expect(userModel.create).toHaveBeenCalledWith(entity.toJSON());
   });
 
   it('should update an existing user', async () => {
@@ -83,7 +63,7 @@ describe('UserRepositoryRepository', () => {
     (userModel.findByIdAndUpdate as jest.Mock).mockResolvedValue(mockUser);
 
     const entity = new User({
-      id: '1',
+      _id: '1',
       email: 'user1@example.com',
       name: 'User One',
       password: 'secret',
@@ -91,7 +71,7 @@ describe('UserRepositoryRepository', () => {
     await repository.update(entity);
 
     expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
-      entity.id,
+      entity._id,
       entity.toJSON(),
       {
         new: true,

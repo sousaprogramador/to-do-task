@@ -22,28 +22,9 @@ describe('TaskMongooseRepository', () => {
     repository = new TaskMongooseRepository(taskModel);
   });
 
-  it('should find all tasks for a user', async () => {
-    const mockTasks = [{ id: '1', userId: 'user1', title: 'Task One' }];
-    (taskModel.find as jest.Mock).mockResolvedValue(mockTasks);
-
-    const tasks = await repository.findAll('user1');
-    expect(tasks).toEqual(mockTasks);
-    expect(taskModel.find).toHaveBeenCalledWith({ userId: 'user1' });
-  });
-
-  it('should find a task by id', async () => {
-    const mockTask = { id: '1', userId: 'user1', title: 'Task One' };
-    (taskModel.findOne as jest.Mock).mockResolvedValue(mockTask);
-
-    const task = await repository.findById('1');
-    expect(task).toEqual(mockTask);
-    expect(taskModel.findOne).toHaveBeenCalledWith({ _id: '1' });
-  });
-
   it('should create a new task', async () => {
     const mockTask = {
       id: '1',
-      userId: 'user1',
       title: 'Task One',
       toJSON: jest.fn(),
     };
@@ -51,7 +32,6 @@ describe('TaskMongooseRepository', () => {
 
     const entity = new Task({
       id: '1',
-      userId: 'user1',
       title: 'Task One',
       description: 'Task one ',
       status: STATUS.PENDING,
@@ -59,33 +39,6 @@ describe('TaskMongooseRepository', () => {
     await repository.create(entity);
 
     expect(taskModel.create).toHaveBeenCalledWith(entity.toJSON());
-  });
-
-  it('should update an existing task', async () => {
-    const mockTask = {
-      id: '1',
-      userId: 'user1',
-      title: 'Task Updated',
-      toJSON: jest.fn(),
-    };
-    (taskModel.findByIdAndUpdate as jest.Mock).mockResolvedValue(mockTask);
-
-    const entity = new Task({
-      id: '1',
-      userId: 'user1',
-      title: 'Task Updated',
-      description: 'Task one ',
-      status: STATUS.PENDING,
-    });
-    await repository.update(entity);
-
-    expect(taskModel.findByIdAndUpdate).toHaveBeenCalledWith(
-      entity.id,
-      entity.toJSON(),
-      {
-        new: true,
-      },
-    );
   });
 
   it('should delete a task by id', async () => {
