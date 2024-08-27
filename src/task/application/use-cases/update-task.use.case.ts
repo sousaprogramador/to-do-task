@@ -3,7 +3,7 @@ import { TaskRepository } from '../../domain/repository/task.repository';
 import { STATUS } from '../../domain/entities';
 import { TaskOutputMapper, TaskOutput } from '../dto/task.output';
 
-export namespace UpdateAgentUseCase {
+export namespace UpdateTaskUseCase {
   export class UseCase implements DefaultUseCase<Input, Output> {
     constructor(private taskRepo: TaskRepository.Repository) {}
 
@@ -30,4 +30,4 @@ export namespace UpdateAgentUseCase {
   export type Output = TaskOutput;
 }
 
-export default UpdateAgentUseCase;
+export default UpdateTaskUseCase;
