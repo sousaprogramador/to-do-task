@@ -5,7 +5,12 @@ export type TaskOutput = {
   title: string;
   description: string;
   image: string;
-  userId?: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  };
   status: STATUS;
 };
 

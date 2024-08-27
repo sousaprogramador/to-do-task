@@ -1,3 +1,4 @@
+import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
 import {
   User,
@@ -21,17 +22,18 @@ export class UserMongooseRepository
   }
 
   async findByEmail(email: string): Promise<User> {
-    try {
-      return await this.userRepository.findOne({ email: email });
-    } catch {}
+    return await this.userRepository.findOne({ email });
   }
 
   async create(entity: User): Promise<void> {
-    await this.userRepository.create(entity.toJSON());
+    await this.userRepository.create({
+      ...entity.toJSON(),
+      password: await bcrypt.hash(entity.toJSON().password, 10),
+    });
   }
 
   async update(entity: User): Promise<void> {
-    await this.userRepository.findByIdAndUpdate(entity.id, entity.toJSON(), {
+    await this.userRepository.findByIdAndUpdate(entity._id, entity.toJSON(), {
       new: true,
     });
   }

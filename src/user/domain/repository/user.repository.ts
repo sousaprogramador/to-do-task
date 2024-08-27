@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 import { User } from '../entities';
 
 export interface UserRepositoryInterface {

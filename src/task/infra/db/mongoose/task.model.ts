@@ -19,8 +19,13 @@ export class Task {
   @Prop()
   image: string;
 
-  @Prop()
-  userId: string;
+  @Prop({ type: Object })
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  };
 
   @Prop()
   status: string;

@@ -4,14 +4,16 @@ import {
   Body,
   Injectable,
   Get,
-  Query,
+  Request,
   Param,
   ParseUUIDPipe,
   Put,
   HttpCode,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { TaskOutput } from '../../application/dto/task.output';
+import { JwtAuthGuard } from '../../../auth/jwt/jwt.guard';
 import {
   CreateTaskUseCase,
   UpdateTaskUseCase,
@@ -21,13 +23,11 @@ import {
 } from '../../application/use-cases';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import {
-  TaskPresenter,
-  TaskPresenterCollectionPresenter,
-} from './task.presenter';
+import { TaskPresenter } from './task.presenter';
 
 @Controller('task')
 @Injectable()
+@UseGuards(JwtAuthGuard)
 export class TaskController {
   constructor(
     private listUseCase: ListTasksUseCase.UseCase,
@@ -52,8 +52,11 @@ export class TaskController {
   }
 
   @Post()
-  async create(@Body() createBrandDto: CreateTaskDto) {
-    const output = await this.createUseCase.execute(createBrandDto);
+  async create(@Body() createBrandDto: CreateTaskDto, @Request() req) {
+    const output = await this.createUseCase.execute({
+      ...createBrandDto,
+      user: req.user,
+    });
     return TaskController.TaskPresenterToResponse(output);
   }
 

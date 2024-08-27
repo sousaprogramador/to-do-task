@@ -1,11 +1,12 @@
 export type UserProperties = {
-  id?: string;
+  _id?: string;
   name: string;
   email: string;
   password: string;
+  avatar?: string;
 };
 
-export type UserPropsJson = Required<{ id: string } & UserProperties>;
+export type UserPropsJson = Required<{ _id: string } & UserProperties>;
 
 export class User {
   constructor(public readonly props: UserProperties) {}
@@ -13,15 +14,14 @@ export class User {
   update(props: UserProperties): void {
     this.name = props.name;
     this.email = props.email;
-    this.password = props.password;
   }
 
-  get id() {
-    return this.props.id;
+  get _id() {
+    return this.props._id;
   }
 
-  private set id(value) {
-    this.props.id = value;
+  private set _id(value) {
+    this.props._id = value;
   }
 
   get name() {

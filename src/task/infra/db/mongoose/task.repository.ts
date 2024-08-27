@@ -9,7 +9,7 @@ export class TaskMongooseRepository
   constructor(private taskRepository: typeof Model<TaskDocument>) {}
 
   async findAll(userId: string): Promise<Task[]> {
-    return this.taskRepository.find({ userId });
+    return this.taskRepository.find();
   }
 
   async findById(id: string): Promise<Task> {

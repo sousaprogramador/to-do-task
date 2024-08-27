@@ -1,5 +1,4 @@
 import { TaskOutput } from 'src/task/application/dto/task.output';
-import { ListTasksUseCase } from 'src/task/application/use-cases';
 import { STATUS } from 'src/task/domain/entities';
 
 export class TaskPresenter {
@@ -7,7 +6,12 @@ export class TaskPresenter {
   title: string;
   description: string;
   image: string;
-  userId?: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  };
   status: STATUS;
 
   constructor(output: TaskOutput) {
@@ -15,7 +19,7 @@ export class TaskPresenter {
     this.title = output.title;
     this.description = output.description;
     this.image = output.image;
-    this.userId = output.userId;
+    this.user = output.user;
     this.status = output.status;
   }
 }

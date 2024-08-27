@@ -10,6 +10,12 @@ export type TaskProperties = {
   description: string;
   image?: string;
   userId?: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  };
   status: STATUS;
 };
 
