@@ -5,7 +5,7 @@ import {
 } from '../../../domain';
 import { UserDocument } from './user.model';
 
-export class UserRepositoryRepository
+export class UserMongooseRepository
   implements UserRepositoryContract.Repository
 {
   constructor(private userRepository: typeof Model<UserDocument>) {}
