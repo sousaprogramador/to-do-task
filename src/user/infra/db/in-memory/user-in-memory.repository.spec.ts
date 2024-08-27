@@ -1,11 +1,11 @@
 import { User } from '../../../domain';
-import { UserInMemoryRepositoryRepository } from './user-in-memory.repository';
+import { UserInMemoryRepository } from './user-in-memory.repository';
 
-describe('UserInMemoryRepositoryRepository', () => {
-  let repository: UserInMemoryRepositoryRepository;
+describe('UserInMemoryRepository', () => {
+  let repository: UserInMemoryRepository;
 
   beforeEach(() => {
-    repository = new UserInMemoryRepositoryRepository();
+    repository = new UserInMemoryRepository();
   });
 
   it('should create a new user', async () => {

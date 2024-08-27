@@ -3,7 +3,7 @@ import {
   UserRepository as UserRepositoryContract,
 } from '../../../domain';
 
-export class UserInMemoryRepositoryRepository
+export class UserInMemoryRepository
   implements UserRepositoryContract.Repository
 {
   items: User[] = [];

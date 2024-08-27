@@ -10,8 +10,8 @@ export class UserController {
   constructor(private readonly createUseCase: CreateUserUseCase.UseCase) {}
 
   @Post()
-  async create(@Body() createAgentDto: CreateUserDto) {
-    const output = await this.createUseCase.execute(createAgentDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    const output = await this.createUseCase.execute(createUserDto);
     return UserController.UserPresenterToResponse(output);
   }
 
