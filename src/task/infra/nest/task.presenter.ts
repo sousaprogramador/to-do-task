@@ -1,5 +1,4 @@
 import { TaskOutput } from 'src/task/application/dto/task.output';
-import { STATUS } from 'src/task/domain/entities';
 
 export class TaskPresenter {
   id: string;
@@ -12,7 +11,7 @@ export class TaskPresenter {
     name: string;
     avatar?: string;
   };
-  status: STATUS;
+  status: string;
 
   constructor(output: TaskOutput) {
     this.id = output.id;

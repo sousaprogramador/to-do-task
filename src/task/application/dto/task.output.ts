@@ -1,4 +1,4 @@
-import { Task, STATUS } from '../../domain/entities';
+import { Task } from '../../domain/entities';
 
 export type TaskOutput = {
   id: string;
@@ -11,7 +11,7 @@ export type TaskOutput = {
     name: string;
     avatar?: string;
   };
-  status: STATUS;
+  status: string;
 };
 
 export class TaskOutputMapper {

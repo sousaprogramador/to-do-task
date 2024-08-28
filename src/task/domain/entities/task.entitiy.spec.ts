@@ -1,4 +1,4 @@
-import { Task, STATUS } from './task.entitiy';
+import { Task } from './task.entitiy';
 
 describe('Task Unit Tests', () => {
   test('constructor of task peending', () => {
@@ -7,7 +7,7 @@ describe('Task Unit Tests', () => {
       description: 'test a to do list',
       image: 'image.com.br',
       userId: '123',
-      status: STATUS.PENDING,
+      status: 'pendente',
     });
 
     expect(task.props).toStrictEqual({
@@ -15,7 +15,7 @@ describe('Task Unit Tests', () => {
       description: 'test a to do list',
       image: 'image.com.br',
       userId: '123',
-      status: STATUS.PENDING,
+      status: 'pendente',
     });
   });
 
@@ -25,7 +25,7 @@ describe('Task Unit Tests', () => {
       description: 'test a to do list',
       image: 'image.com.br',
       userId: '123',
-      status: STATUS.CANCELED,
+      status: 'canceled',
     });
 
     expect(task.props).toStrictEqual({
@@ -33,7 +33,7 @@ describe('Task Unit Tests', () => {
       description: 'test a to do list',
       image: 'image.com.br',
       userId: '123',
-      status: STATUS.CANCELED,
+      status: 'canceled',
     });
   });
 });

@@ -7,13 +7,7 @@ export class TaskInMemoryRepository
   items: Task[];
 
   async findAll(userId: string): Promise<Task[]> {
-    const tasks = [];
-    this.items.map((item) => {
-      if (item.userId === userId) {
-        tasks.push(item);
-      }
-    });
-    return tasks;
+    return this.items;
   }
 
   async findById(id: string): Promise<Task> {

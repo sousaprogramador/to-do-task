@@ -1,4 +1,4 @@
-import { Task, STATUS } from '../../domain/entities';
+import { Task } from '../../domain/entities';
 import { TaskOutputMapper } from './task.output';
 
 describe('TaskOutputMapper Unit Tests', () => {
@@ -8,7 +8,7 @@ describe('TaskOutputMapper Unit Tests', () => {
       description: 'test a to do list',
       image: 'image.com.br',
       userId: '123',
-      status: STATUS.CANCELED,
+      status: 'pendente',
     });
 
     const spyToJSON = jest.spyOn(entity, 'toJSON');
@@ -19,7 +19,7 @@ describe('TaskOutputMapper Unit Tests', () => {
       description: 'test a to do list',
       image: 'image.com.br',
       userId: '123',
-      status: STATUS.CANCELED,
+      status: 'pendente',
     });
   });
 });

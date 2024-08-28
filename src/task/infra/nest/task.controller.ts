@@ -6,7 +6,6 @@ import {
   Get,
   Request,
   Param,
-  ParseUUIDPipe,
   Put,
   HttpCode,
   Delete,
@@ -69,9 +68,7 @@ export class TaskController {
 
   @HttpCode(204)
   @Delete(':id')
-  remove(
-    @Param('id', new ParseUUIDPipe({ errorHttpStatusCode: 422 })) id: string,
-  ) {
+  remove(@Param('id') id: string) {
     return this.deleteUseCase.execute({ id });
   }
 

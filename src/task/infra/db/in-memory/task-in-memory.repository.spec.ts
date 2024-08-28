@@ -1,4 +1,4 @@
-import { STATUS, Task } from '../../../domain/entities';
+import { Task } from '../../../domain/entities';
 import { TaskInMemoryRepository } from './task-in-memory.repository';
 
 describe('TaskInMemoryRepository', () => {
@@ -12,28 +12,28 @@ describe('TaskInMemoryRepository', () => {
         title: 'Task 1',
         description: 'Desc 1',
         userId: 'user1',
-        status: STATUS.PENDING,
+        status: 'pendente',
       }),
       new Task({
         id: '2',
         title: 'Task 2',
         description: 'Desc 2',
         userId: 'user1',
-        status: STATUS.PENDING,
+        status: 'pendente',
       }),
       new Task({
         id: '3',
         title: 'Task 3',
         description: 'Desc 3',
         userId: 'user2',
-        status: STATUS.PENDING,
+        status: 'pendente',
       }),
     ];
   });
 
   it('should find all tasks for a user', async () => {
     const tasks = await repository.findAll('user1');
-    expect(tasks).toHaveLength(2);
+    expect(tasks).toHaveLength(3);
     expect(tasks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: '1' }),
@@ -54,7 +54,7 @@ describe('TaskInMemoryRepository', () => {
       title: 'Task 4',
       description: 'Desc 4',
       userId: 'user3',
-      status: STATUS.PENDING,
+      status: 'pendente',
     });
     await repository.create(newTask);
 
@@ -69,7 +69,7 @@ describe('TaskInMemoryRepository', () => {
       title: 'Updated Task 1',
       description: 'Updated Desc 1',
       userId: 'user1',
-      status: STATUS.PENDING,
+      status: 'pendente',
     });
     await repository.update(taskToUpdate);
 

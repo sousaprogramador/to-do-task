@@ -1,9 +1,3 @@
-export enum STATUS {
-  PENDING = 'PENDING',
-  CONCLUED = 'CONCLUED',
-  CANCELED = 'CANCELED',
-}
-
 export type TaskProperties = {
   id?: string;
   title: string;
@@ -16,7 +10,7 @@ export type TaskProperties = {
     name: string;
     avatar?: string;
   };
-  status: STATUS;
+  status: string;
 };
 
 export type TaskPropsJson = Required<{ id: string } & TaskProperties>;
@@ -28,7 +22,7 @@ export class Task {
     this.title = props.title;
     this.description = props.description;
     this.image = props.image;
-    this.userId = props.userId;
+    this.status = props.status;
   }
 
   get id() {
@@ -63,12 +57,12 @@ export class Task {
     this.props.image = value;
   }
 
-  get userId() {
-    return this.props.userId;
+  get status() {
+    return this.props.status;
   }
 
-  private set userId(value) {
-    this.props.userId = value;
+  private set status(value) {
+    this.props.status = value;
   }
 
   toJSON(): TaskPropsJson {

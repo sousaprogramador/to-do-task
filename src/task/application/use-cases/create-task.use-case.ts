@@ -1,6 +1,6 @@
 import { UseCase as DefaultUseCase } from '../../../common';
 import { TaskRepository } from '../../domain/repository/task.repository';
-import { Task, STATUS } from '../../domain/entities';
+import { Task } from '../../domain/entities';
 import { TaskOutputMapper, TaskOutput } from '../dto/task.output';
 
 export namespace CreateTaskUseCase {
@@ -24,7 +24,7 @@ export namespace CreateTaskUseCase {
       name: string;
       avatar?: string;
     };
-    status: STATUS;
+    status: string;
   };
 
   export type Output = TaskOutput;

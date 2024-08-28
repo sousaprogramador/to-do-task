@@ -1,6 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 import { CreateTaskUseCase } from '../../../application/use-cases';
-import { STATUS } from 'src/task/domain/entities';
 
 export class CreateTaskDto implements CreateTaskUseCase.Input {
   @IsString()
@@ -18,5 +17,5 @@ export class CreateTaskDto implements CreateTaskUseCase.Input {
   userId?: string;
 
   @IsString()
-  status: STATUS;
+  status: string;
 }

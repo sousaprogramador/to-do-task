@@ -17,7 +17,11 @@ export class TaskMongooseRepository
       const task = await this.taskRepository.findOne({ _id: id });
       return new Task({
         id: task._id,
-        ...task,
+        title: task.title,
+        description: task.description,
+        image: task.image,
+        user: task.user,
+        status: task.status,
       });
     } catch {}
   }

@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { STATUS, Task } from '../../../domain/entities';
+import { Task } from '../../../domain/entities';
 import { TaskMongooseRepository } from './task.repository';
 import { TaskDocument } from './task.model';
 
@@ -34,7 +34,7 @@ describe('TaskMongooseRepository', () => {
       id: '1',
       title: 'Task One',
       description: 'Task one ',
-      status: STATUS.PENDING,
+      status: 'pendente',
     });
     await repository.create(entity);
 
