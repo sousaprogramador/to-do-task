@@ -83,7 +83,7 @@ jobs:
           NETWORK_MODE=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.networkMode')
           TASK_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.taskRoleArn')
           EXECUTION_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.executionRoleArn')
-          REQUIRES_COMPATIBILITIES=$(echo $TASK_DEFINITION | jq -c '.taskDefinition.requiresCompatibilities')
+          REQUIRES_COMPATIBILITIES=$(echo $TASK_DEFINITION | jq -c '.taskDefinition.requiresCompatibilities // ["FARGATE"]')
           CPU=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.cpu')
           MEMORY=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.memory')
 
