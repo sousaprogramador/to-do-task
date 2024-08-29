@@ -27,6 +27,14 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Create .env file
+      run: |
+        echo "NODE_ENV=production" >> .env
+        echo "ANOTHER_ENV_VAR=${{ secrets.ANOTHER_ENV_VAR }}" >> .env
+        # Adicione mais variáveis conforme necessário
+        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+
     - name: Log in to Amazon ECR
       run: |
         aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
