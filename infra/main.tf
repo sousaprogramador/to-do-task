@@ -2,6 +2,11 @@ provider "aws" {
   region = "sa-east-1"
 }
 
+variable "image_tag" {
+  description = "Tag da imagem Docker a ser usada no ECS"
+  type        = string
+}
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -12,12 +17,6 @@ resource "aws_ecr_repository" "app_repo" {
   tags = {
     Name = "my-app-repo"
   }
-}
-
-# Tenta buscar a imagem mais recente
-data "aws_ecr_image" "latest_image" {
-  repository_name = aws_ecr_repository.app_repo.name
-  most_recent     = true
 }
 
 data "aws_iam_role" "existing_ecs_task_execution_role" {
@@ -109,7 +108,7 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     name      = "app-container"
-    image     = "${aws_ecr_repository.app_repo.repository_url}:${coalesce(data.aws_ecr_image.latest_image.image_tag, "latest")}"
+    image     = "${aws_ecr_repository.app_repo.repository_url}:${var.image_tag}"
     essential = true
     portMappings = [{
       containerPort = 80
