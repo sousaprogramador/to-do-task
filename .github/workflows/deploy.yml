@@ -12,7 +12,6 @@ env:
   ECS_TASK_DEFINITION: my-nestjs-task
   ECR_REPOSITORY_NAME: nestjs-app-repo
   CONTAINER_NAME: nestjs-app
-  SUBNET_ID: subnet-XXXXXX  # Substitua pelos IDs de sub-rede corretos
   SECURITY_GROUP_ID: sg-XXXXXX  # Substitua pelo ID do security group correto
 
 jobs:
@@ -99,12 +98,17 @@ jobs:
           aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
         fi
 
+    - name: Retrieve Subnet IDs
+      run: |
+        SUBNET_IDS=$(aws ec2 describe-subnets --region $AWS_REGION --query 'Subnets[*].SubnetId' --output text | tr '\n' ',')
+        echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
+
     - name: Ensure ECS service exists
       run: |
         SERVICE=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --region $AWS_REGION --query 'services[0].serviceArn' --output text 2>/dev/null)
         if [ "$SERVICE" == "None" ]; then
           echo "Service not found. Creating service $ECS_SERVICE"
-          aws ecs create-service --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --task-definition $ECS_TASK_DEFINITION --desired-count 1 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[${{ env.SUBNET_ID }}],securityGroups=[${{ env.SECURITY_GROUP_ID }}],assignPublicIp=ENABLED}" --region $AWS_REGION
+          aws ecs create-service --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --task-definition $ECS_TASK_DEFINITION --desired-count 1 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[${{ env.SUBNET_IDS }}],securityGroups=[${{ env.SECURITY_GROUP_ID }}],assignPublicIp=ENABLED}" --region $AWS_REGION
         else
           echo "Service $ECS_SERVICE exists."
         fi
