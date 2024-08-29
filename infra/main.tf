@@ -2,7 +2,39 @@ provider "aws" {
   region = "sa-east-1"
 }
 
+# Tenta obter o repositório ECR se ele existir
+data "aws_ecr_repository" "nestjs_app" {
+  name = "nestjs-app-repo"
+
+  # Se o repositório não for encontrado, ignore o erro
+  lifecycle {
+    ignore_errors = true
+  }
+}
+
+# Recurso condicional que cria o ECR somente se ele não existir
+resource "null_resource" "create_ecr_if_not_exists" {
+  provisioner "local-exec" {
+    command = <<EOT
+      if aws ecr describe-repositories --repository-names nestjs-app-repo --region ${var.aws_region} >/dev/null 2>&1; then
+        echo "ECR repository already exists, skipping creation."
+      else
+        echo "ECR repository does not exist, creating..."
+        aws ecr create-repository --repository-name nestjs-app-repo --region ${var.aws_region}
+      fi
+    EOT
+  }
+
+  # Executa apenas se o repositório não for encontrado
+  triggers = {
+    ecr_exists = data.aws_ecr_repository.nestjs_app.repository_url != "" ? true : false
+  }
+}
+
+# Utilize o repositório ECR que já existe ou foi criado
 resource "aws_ecr_repository" "nestjs_app" {
+  count = data.aws_ecr_repository.nestjs_app.repository_url == "" ? 1 : 0
+
   name = "nestjs-app-repo"
 
   lifecycle {
@@ -11,7 +43,7 @@ resource "aws_ecr_repository" "nestjs_app" {
 }
 
 output "ecr_repository_uri" {
-  value = aws_ecr_repository.nestjs_app.repository_url
+  value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -95,4 +127,3 @@ resource "aws_security_group" "ecs_security_group" {
 output "ecr_repository_uri" {
   value = aws_ecr_repository.nestjs_app.repository_url
 }
-
