@@ -1,5 +1,15 @@
 provider "aws" {
-  region = "sa-east-1"
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  type    = string
+  default = "sa-east-1"
+}
+
+variable "vpc_id" {
+  type    = string
+  default = "vpc-xxxxxxxx" # Substitua pelo ID do seu VPC, ou remova se estiver criando a VPC
 }
 
 # Criação da VPC

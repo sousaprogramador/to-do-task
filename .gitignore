@@ -34,3 +34,12 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 .env
+
+# Terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Terraform variable files
+terraform.tfvars
