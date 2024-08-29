@@ -7,6 +7,11 @@ variable "aws_region" {
   default = "sa-east-1"
 }
 
+variable "vpc_id" {
+  type    = string
+  default = "vpc-0e1ca8723ca0a6e2d" # Substitua pelo ID do seu VPC
+}
+
 # Verifica se o IAM Role já existe
 data "aws_iam_role" "existing_iam_role" {
   name = "ecsTaskExecutionRole"
@@ -50,53 +55,11 @@ output "ecr_repository_uri" {
   value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
 }
 
-# Verifica se o VPC já existe com mais filtros específicos
-data "aws_vpc" "existing_vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["main-vpc"] # O nome exato do VPC que você está procurando
-  }
-
-  filter {
-    name   = "cidr-block"
-    values = ["10.0.0.0/16"] # Ajuste para o CIDR do seu VPC específico
-  }
-
-  filter {
-    name   = "isDefault"
-    values = ["false"] # Certifique-se de que está filtrando apenas VPCs não padrão
-  }
-}
-
-# Criação do VPC somente se não existir
-resource "aws_vpc" "main" {
-  count      = length(data.aws_vpc.existing_vpc.id) > 0 ? 0 : 1
-  cidr_block = "10.0.0.0/16"
-
-  tags = {
-    Name = "main-vpc"
-  }
-}
-
-# Verifica se o Security Group já existe
-data "aws_security_group" "existing_sg" {
-  filter {
-    name   = "group-name"
-    values = ["ecs-security-group"]
-  }
-
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.existing_vpc.id]
-  }
-}
-
-# Criação do Security Group somente se não existir
+# Criação do Security Group utilizando o vpc_id conhecido
 resource "aws_security_group" "ecs_security_group" {
-  count       = length(data.aws_security_group.existing_sg.id) > 0 ? 0 : 1
   name        = "ecs-security-group"
   description = "Allow traffic to ECS tasks"
-  vpc_id      = aws_vpc.main[count.index].id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 3333
@@ -174,6 +137,6 @@ resource "aws_ecs_service" "this" {
 
   network_configuration {
     subnets         = ["subnet-12345678", "subnet-87654321"] # substitua com subnets válidas
-    security_groups = [aws_security_group.ecs_security_group[0].id]
+    security_groups = [aws_security_group.ecs_security_group.id]
   }
 }
