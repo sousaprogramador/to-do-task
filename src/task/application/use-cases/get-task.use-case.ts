@@ -7,7 +7,15 @@ export namespace GetTaskUseCase {
     constructor(private taskRepo: TaskRepository.Repository) {}
 
     async execute(input: Input): Promise<Output> {
+      if (!input.id) {
+        throw new Error('Invalid task ID provided');
+      }
+
       const entity = await this.taskRepo.findById(input.id);
+      if (!entity) {
+        throw new Error('Task not found');
+      }
+
       return TaskOutputMapper.toOutput(entity);
     }
   }

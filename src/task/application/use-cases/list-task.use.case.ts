@@ -7,10 +7,21 @@ export namespace ListTasksUseCase {
     constructor(private taskRepo: TaskRepository.Repository) {}
 
     async execute(input: Input): Promise<Output> {
-      const Tasks = await this.taskRepo.findAll(input.userId);
-      return Tasks.map((task) => {
-        return TaskOutputMapper.toOutput(task);
-      });
+      if (!input.userId || typeof input.userId !== 'string') {
+        throw new Error('Invalid user ID.');
+      }
+
+      try {
+        const tasks = await this.taskRepo.findAll(input.userId);
+        if (!tasks.length) {
+          return [];
+        }
+        return tasks.map((task) => TaskOutputMapper.toOutput(task));
+      } catch (error) {
+        throw new Error(
+          'An error occurred while retrieving tasks: ' + error.message,
+        );
+      }
     }
   }
 
