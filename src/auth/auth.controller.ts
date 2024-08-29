@@ -36,7 +36,7 @@ export class AuthController {
 
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) {
-      throw new BadRequestException('Usuários ou senha inválidos. as');
+      throw new BadRequestException('Usuários ou senha inválidos.');
     }
 
     const tokens = await this.getTokensUseCase.execute({
@@ -49,13 +49,18 @@ export class AuthController {
     const nowInMilliseconds = new Date().getTime();
     const addedAnother15Minutes = nowInMilliseconds + 15 * 60 * 1000;
 
-    return { ...tokens, exp: addedAnother15Minutes };
+    delete user.password;
+    return { ...tokens, exp: addedAnother15Minutes, user };
   }
 
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto) {
-    const output = await this.createUseCase.execute(createUserDto);
-    return AuthController.UserPresenterToResponse(output);
+    try {
+      const output = await this.createUseCase.execute(createUserDto);
+      return AuthController.UserPresenterToResponse(output);
+    } catch (error) {
+      throw new BadRequestException('Usuario ja registrado');
+    }
   }
 
   static UserPresenterToResponse(output: UserOutput) {
