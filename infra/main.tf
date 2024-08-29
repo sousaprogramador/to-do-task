@@ -1,108 +1,153 @@
 provider "aws" {
-  region = var.aws_region
+  region = "sa-east-1"
 }
 
-variable "aws_region" {
-  description = "AWS region"
-  default     = "sa-east-1"
+data "aws_availability_zones" "available" {
+  state = "available"
 }
 
-data "aws_vpcs" "all" {}
-
-data "aws_vpc" "existing_vpc" {
-  id = data.aws_vpcs.all.ids[0] # Seleciona a primeira VPC encontrada
-}
-
-data "aws_subnets" "all" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.existing_vpc.id]
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "main-vpc"
   }
 }
 
-resource "null_resource" "create_ecr_if_not_exists" {
-  provisioner "local-exec" {
-    command = <<EOT
-      if aws ecr describe-repositories --repository-names nestjs-app-repo --region ${var.aws_region} >/dev/null 2>&1; then
-        echo "ECR repository already exists, skipping creation."
-      else
-        echo "ECR repository does not exist, creating..."
-        aws ecr create-repository --repository-name nestjs-app-repo --region ${var.aws_region}
-      fi
-    EOT
+resource "aws_subnet" "public" {
+  count                   = 2
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index)
+  map_public_ip_on_launch = true
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name = "main-subnet-${count.index}"
   }
 }
 
-resource "aws_ecr_repository" "nestjs_app" {
-  name = "nestjs-app-repo"
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "main-gw"
+  }
 }
 
-data "aws_iam_role" "existing_iam_role" {
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "main-rt-public"
+  }
+}
+
+resource "aws_route_table_association" "public" {
+  count          = length(aws_subnet.public)
+  subnet_id      = element(aws_subnet.public.*.id, count.index)
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_ecs_cluster" "main" {
+  name = "main-ecs-cluster"
+}
+
+# Verifica se o repositório ECR já existe
+data "aws_ecr_repository" "existing_app_repo" {
+  name = "my-app-repo"
+}
+
+# Cria o repositório ECR se ele não existir
+resource "aws_ecr_repository" "app_repo" {
+  name                 = "my-app-repo"
+  image_tag_mutability = "MUTABLE"
+  tags = {
+    Name = "my-app-repo"
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Verifica se a role ecsTaskExecutionRole já existe
+data "aws_iam_role" "existing_ecs_task_execution_role" {
   name = "ecsTaskExecutionRole"
 }
 
+# Cria a role se ela não existir
 resource "aws_iam_role" "ecs_task_execution_role" {
-  count = length(data.aws_iam_role.existing_iam_role.arn) > 0 ? 0 : 1
+  count = length(data.aws_iam_role.existing_ecs_task_execution_role.arn) == 0 ? 1 : 0
 
   name = "ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
       }
-    }]
+    ]
   })
+
+  tags = {
+    Name = "ecsTaskExecutionRole"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
-resource "aws_ecs_cluster" "this" {
-  name = "my-nestjs-cluster"
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  count = length(data.aws_iam_role.existing_ecs_task_execution_role.arn) == 0 ? 1 : 0
+
+  role       = aws_iam_role.ecs_task_execution_role[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_ecs_task_definition" "this" {
-  family                   = "my-nestjs-task"
+output "ecr_repository_uri" {
+  value = coalesce(
+    data.aws_ecr_repository.existing_app_repo.repository_url,
+    aws_ecr_repository.app_repo.repository_url
+  )
+}
+
+resource "aws_ecs_task_definition" "app" {
+  family                   = "app-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
+  execution_role_arn       = length(data.aws_iam_role.existing_ecs_task_execution_role.arn) > 0 ? data.aws_iam_role.existing_ecs_task_execution_role.arn : aws_iam_role.ecs_task_execution_role[0].arn
 
   container_definitions = jsonencode([{
-    name      = "nestjs-app"
-    image     = "${aws_ecr_repository.nestjs_app.repository_url}:latest"
+    name = "app-container"
+    image = coalesce(
+      data.aws_ecr_repository.existing_app_repo.repository_url,
+      aws_ecr_repository.app_repo.repository_url
+    )
     essential = true
     portMappings = [{
-      containerPort = 3333
-      hostPort      = 3333
+      containerPort = 80
+      hostPort      = 80
     }]
   }])
-
-  execution_role_arn = length(data.aws_iam_role.existing_iam_role.arn) > 0 ? data.aws_iam_role.existing_iam_role.arn : aws_iam_role.ecs_task_execution_role[0].arn
 }
 
-resource "aws_ecs_service" "this" {
-  name            = "my-nestjs-service"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.this.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets         = data.aws_subnets.all.ids
-    security_groups = [aws_security_group.ecs_security_group.id]
-  }
-}
-
-resource "aws_security_group" "ecs_security_group" {
-  name        = "ecs-security-group"
-  description = "Allow traffic to ECS tasks"
-  vpc_id      = data.aws_vpc.existing_vpc.id
+resource "aws_security_group" "ecs_sg" {
+  vpc_id = aws_vpc.main.id
 
   ingress {
-    from_port   = 3333
-    to_port     = 3333
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -113,12 +158,41 @@ resource "aws_security_group" "ecs_security_group" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "ecs-sg"
+  }
 }
 
-output "ecr_repository_uri" {
-  value = aws_ecr_repository.nestjs_app.repository_url
+resource "aws_lb" "app" {
+  name               = "app-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.ecs_sg.id]
+  subnets            = aws_subnet.public.*.id
+
+  tags = {
+    Name = "app-lb"
+  }
 }
 
-output "security_group_id" {
-  value = aws_security_group.ecs_security_group.id
+resource "aws_lb_target_group" "app" {
+  name     = "app-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  target_type = "ip"
+
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+
+  tags = {
+    Name = "app-tg"
+  }
 }
