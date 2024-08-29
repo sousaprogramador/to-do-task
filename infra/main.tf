@@ -7,10 +7,17 @@ variable "aws_region" {
   default = "sa-east-1"
 }
 
+# Verifica se o IAM Role já existe
+data "aws_iam_role" "existing_iam_role" {
+  name = "ecsTaskExecutionRole"
+}
+
+# Tenta obter o repositório ECR se ele existir
 data "aws_ecr_repository" "nestjs_app" {
   name = "nestjs-app-repo"
 }
 
+# Recurso condicional que cria o ECR somente se ele não existir
 resource "null_resource" "create_ecr_if_not_exists" {
   provisioner "local-exec" {
     command = <<EOT
@@ -28,6 +35,7 @@ resource "null_resource" "create_ecr_if_not_exists" {
   }
 }
 
+# Utilize o repositório ECR que já existe ou foi criado
 resource "aws_ecr_repository" "nestjs_app" {
   count = data.aws_ecr_repository.nestjs_app.repository_url == "" ? 1 : 0
 
@@ -42,6 +50,7 @@ output "ecr_repository_uri" {
   value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
 }
 
+# Criação do VPC
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
@@ -50,10 +59,32 @@ resource "aws_vpc" "main" {
   }
 }
 
+# Criação do IAM Role condicionalmente
+resource "aws_iam_role" "ecs_task_execution_role" {
+  count = data.aws_iam_role.existing_iam_role.name != "" ? 0 : 1
+
+  name = "ecsTaskExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Criação do cluster ECS
 resource "aws_ecs_cluster" "this" {
   name = "my-nestjs-cluster"
 }
 
+# Criação da task definition ECS
 resource "aws_ecs_task_definition" "this" {
   family                   = "my-nestjs-task"
   network_mode             = "awsvpc"
@@ -75,9 +106,10 @@ resource "aws_ecs_task_definition" "this" {
     }
   ])
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn = aws_iam_role.ecs_task_execution_role[0].arn
 }
 
+# Criação do serviço ECS
 resource "aws_ecs_service" "this" {
   name            = "my-nestjs-service"
   cluster         = aws_ecs_cluster.this.id
@@ -91,23 +123,7 @@ resource "aws_ecs_service" "this" {
   }
 }
 
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
+# Criação do Security Group
 resource "aws_security_group" "ecs_security_group" {
   name        = "ecs-security-group"
   description = "Allow traffic to ECS tasks"
