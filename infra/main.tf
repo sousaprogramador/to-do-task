@@ -79,7 +79,7 @@ resource "aws_ecs_task_definition" "this" {
     }]
   }])
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role[0].arn
+  execution_role_arn = length(data.aws_iam_role.existing_iam_role.arn) > 0 ? data.aws_iam_role.existing_iam_role.arn : aws_iam_role.ecs_task_execution_role[0].arn
 }
 
 resource "aws_ecs_service" "this" {
