@@ -12,6 +12,9 @@ import {
 } from '../user/application/use-cases';
 import GetTokensUseCase from '../auth/application/use-cases/get-tokens.use-case';
 import { LoginUserDto } from './dto/login-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UserOutput } from '../user/application/dto/user.output';
+import { UserPresenter } from '../user/infra/nest/user.presenter';
 
 @Controller('auth')
 @Injectable()
@@ -47,5 +50,15 @@ export class AuthController {
     const addedAnother15Minutes = nowInMilliseconds + 15 * 60 * 1000;
 
     return { ...tokens, exp: addedAnother15Minutes };
+  }
+
+  @Post('register')
+  async register(@Body() createUserDto: CreateUserDto) {
+    const output = await this.createUseCase.execute(createUserDto);
+    return AuthController.UserPresenterToResponse(output);
+  }
+
+  static UserPresenterToResponse(output: UserOutput) {
+    return new UserPresenter(output);
   }
 }
