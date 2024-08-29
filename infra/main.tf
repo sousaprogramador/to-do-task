@@ -50,8 +50,18 @@ output "ecr_repository_uri" {
   value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
 }
 
-# Criação do VPC
+# Verifica se o VPC já existe (se for um VPC específico que você quer verificar)
+# Se você quer criar um novo VPC, pode pular esta parte e apenas criar o recurso normalmente
+data "aws_vpc" "existing_vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["main-vpc"]
+  }
+}
+
+# Criação do VPC somente se não existir
 resource "aws_vpc" "main" {
+  count      = length(data.aws_vpc.existing_vpc.id) > 0 ? 0 : 1
   cidr_block = "10.0.0.0/16"
 
   tags = {
@@ -59,9 +69,39 @@ resource "aws_vpc" "main" {
   }
 }
 
+# Verifica se o Security Group já existe
+data "aws_security_group" "existing_sg" {
+  filter {
+    name   = "group-name"
+    values = ["ecs-security-group"]
+  }
+}
+
+# Criação do Security Group somente se não existir
+resource "aws_security_group" "ecs_security_group" {
+  count       = length(data.aws_security_group.existing_sg.id) > 0 ? 0 : 1
+  name        = "ecs-security-group"
+  description = "Allow traffic to ECS tasks"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 3333
+    to_port     = 3333
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 # Criação do IAM Role condicionalmente
 resource "aws_iam_role" "ecs_task_execution_role" {
-  count = data.aws_iam_role.existing_iam_role.name != "" ? 0 : 1
+  count = length(data.aws_iam_role.existing_iam_role.name) > 0 ? 0 : 1
 
   name = "ecsTaskExecutionRole"
 
@@ -121,26 +161,5 @@ resource "aws_ecs_service" "this" {
   network_configuration {
     subnets         = ["subnet-12345678", "subnet-87654321"]
     security_groups = [aws_security_group.ecs_security_group.id]
-  }
-}
-
-# Criação do Security Group
-resource "aws_security_group" "ecs_security_group" {
-  name        = "ecs-security-group"
-  description = "Allow traffic to ECS tasks"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = 3333
-    to_port     = 3333
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
   }
 }
