@@ -58,11 +58,11 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
-      working-directory: ./terraform
+      working-directory: ./infra
 
     - name: Terraform Apply
       run: terraform apply -auto-approve -var "image_tag=${{ env.IMAGE_TAG }}"
-      working-directory: ./terraform
+      working-directory: ./infra
 
     - name: Deploy to ECS
       run: |
