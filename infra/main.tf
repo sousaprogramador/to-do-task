@@ -5,11 +5,6 @@ provider "aws" {
 # Tenta obter o repositório ECR se ele existir
 data "aws_ecr_repository" "nestjs_app" {
   name = "nestjs-app-repo"
-
-  # Se o repositório não for encontrado, ignore o erro
-  lifecycle {
-    ignore_errors = true
-  }
 }
 
 # Recurso condicional que cria o ECR somente se ele não existir
@@ -27,7 +22,7 @@ resource "null_resource" "create_ecr_if_not_exists" {
 
   # Executa apenas se o repositório não for encontrado
   triggers = {
-    ecr_exists = data.aws_ecr_repository.nestjs_app.repository_url != "" ? true : false
+    ecr_exists = data.aws_ecr_repository.nestjs_app.repository_url == "" ? "false" : "true"
   }
 }
 
@@ -122,8 +117,4 @@ resource "aws_security_group" "ecs_security_group" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-output "ecr_repository_uri" {
-  value = aws_ecr_repository.nestjs_app.repository_url
 }
