@@ -7,6 +7,23 @@ variable "aws_region" {
   default     = "sa-east-1"
 }
 
+variable "vpc_id" {
+  description = "ID of an existing VPC"
+}
+
+variable "subnet_ids" {
+  description = "List of Subnet IDs in the existing VPC"
+  type        = list(string)
+}
+
+data "aws_vpc" "existing_vpc" {
+  id = var.vpc_id
+}
+
+data "aws_subnet_ids" "existing_subnets" {
+  vpc_id = var.vpc_id
+}
+
 # Verifica se o repositório ECR já existe e cria se necessário
 data "aws_ecr_repository" "nestjs_app" {
   name = "nestjs-app-repo"
@@ -29,77 +46,9 @@ resource "null_resource" "create_ecr_if_not_exists" {
   }
 }
 
-# Cria um VPC
-resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-
-  tags = {
-    Name = "main-vpc"
-  }
-}
-
-# Cria uma Internet Gateway
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "main-igw"
-  }
-}
-
-# Cria uma Route Table
-resource "aws_route_table" "main" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
-  tags = {
-    Name = "main-route-table"
-  }
-}
-
-# Cria Subnet 1
-resource "aws_subnet" "subnet_1" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "${var.aws_region}a"
-
-  tags = {
-    Name = "main-subnet-1"
-  }
-}
-
-# Cria Subnet 2
-resource "aws_subnet" "subnet_2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "${var.aws_region}b"
-
-  tags = {
-    Name = "main-subnet-2"
-  }
-}
-
-# Associa Subnet 1 com a Route Table
-resource "aws_route_table_association" "subnet_1_association" {
-  subnet_id      = aws_subnet.subnet_1.id
-  route_table_id = aws_route_table.main.id
-}
-
-# Associa Subnet 2 com a Route Table
-resource "aws_route_table_association" "subnet_2_association" {
-  subnet_id      = aws_subnet.subnet_2.id
-  route_table_id = aws_route_table.main.id
-}
-
 # Cria um Security Group
 resource "aws_security_group" "ecs_security_group" {
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = data.aws_vpc.existing_vpc.id
   name        = "ecs-security-group"
   description = "Allow traffic to ECS tasks"
 
@@ -184,7 +133,7 @@ resource "aws_ecs_service" "this" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+    subnets         = var.subnet_ids
     security_groups = [aws_security_group.ecs_security_group.id]
   }
 
