@@ -106,7 +106,8 @@ resource "aws_ecs_task_definition" "this" {
     }
   ])
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role[0].arn
+  # Se o IAM Role foi criado pelo Terraform, use o recurso criado; caso contrário, use o role existente
+  execution_role_arn = length(aws_iam_role.ecs_task_execution_role) > 0 ? aws_iam_role.ecs_task_execution_role[0].arn : data.aws_iam_role.existing_iam_role.arn
 }
 
 # Criação do serviço ECS
