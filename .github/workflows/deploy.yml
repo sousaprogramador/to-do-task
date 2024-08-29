@@ -71,14 +71,21 @@ jobs:
 
     - name: Register or update ECS task definition
       run: |
-        TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION || echo "")
+        TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION 2>/dev/null || echo "")
         if [ -z "$TASK_DEFINITION" ]; then
           echo "Registering new task definition"
           NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY $ECS_TASK_DEFINITION --argjson MEMORY 512 --argjson CPU 256 '.family=$FAMILY | .containerDefinitions=[{"name":"nestjs-app","image":$IMAGE,"essential":true,"memory":$MEMORY,"cpu":$CPU,"portMappings":[{"containerPort":3333,"hostPort":3333}]}]')
           aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
         else
           echo "Updating existing task definition"
-          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" '.taskDefinition.containerDefinitions[0].image = $IMAGE' | jq '.taskDefinition | {family, containerDefinitions, volumes, networkMode, placementConstraints, taskRoleArn, executionRoleArn, requiresCompatibilities, cpu, memory}')
+          FAMILY=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.family')
+          NETWORK_MODE=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.networkMode')
+          TASK_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.taskRoleArn')
+          EXECUTION_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.executionRoleArn')
+          REQUIRES_COMPATIBILITIES=$(echo $TASK_DEFINITION | jq -c '.taskDefinition.requiresCompatibilities')
+          CPU=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.cpu')
+          MEMORY=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.memory')
+          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY "$FAMILY" --arg NETWORK_MODE "$NETWORK_MODE" --arg TASK_ROLE_ARN "$TASK_ROLE_ARN" --arg EXECUTION_ROLE_ARN "$EXECUTION_ROLE_ARN" --argjson REQUIRES_COMPATIBILITIES "$REQUIRES_COMPATIBILITIES" --arg CPU "$CPU" --arg MEMORY "$MEMORY" '.taskDefinition.containerDefinitions[0].image = $IMAGE | .family=$FAMILY | .networkMode=$NETWORK_MODE | .taskRoleArn=$TASK_ROLE_ARN | .executionRoleArn=$EXECUTION_ROLE_ARN | .requiresCompatibilities=$REQUIRES_COMPATIBILITIES | .cpu=$CPU | .memory=$MEMORY')
           aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
         fi
 
