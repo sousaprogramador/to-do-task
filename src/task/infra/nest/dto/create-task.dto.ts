@@ -14,8 +14,5 @@ export class CreateTaskDto implements CreateTaskUseCase.Input {
   image?: string;
 
   @IsString()
-  userId?: string;
-
-  @IsString()
   status: string;
 }

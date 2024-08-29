@@ -1,4 +1,4 @@
-import { TaskOutput } from 'src/task/application/dto/task.output';
+import { TaskOutput } from '../../application/dto/task.output';
 
 export class TaskPresenter {
   id: string;
