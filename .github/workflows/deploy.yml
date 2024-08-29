@@ -1,0 +1,71 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: sa-east-1
+  ECS_CLUSTER: my-nestjs-cluster
+  ECS_SERVICE: my-nestjs-service
+  ECS_TASK_DEFINITION: my-nestjs-task
+  ECR_REPOSITORY_NAME: nestjs-app-repo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build application
+      run: npm run build
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: sa-east-1
+
+    - name: Ensure ECR repository exists
+      run: |
+        aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY_NAME }} --region $AWS_REGION || \
+        aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY_NAME }} --region $AWS_REGION
+      id: ecr
+
+    - name: Get ECR URI
+      run: echo "ECR_URI=$(aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY_NAME }} --region $AWS_REGION --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_ENV
+
+    - name: Log in to Amazon ECR
+      run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ env.ECR_URI }}
+
+    - name: Create .env file
+      run: |
+        echo "DB_URI=${{ secrets.DB_URI }}" >> .env
+        echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> .env
+        echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+
+    - name: Build, tag, and push image to Amazon ECR
+      run: |
+        IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+        docker build -t ${{ env.ECR_URI }}:$IMAGE_TAG .
+        docker push ${{ env.ECR_URI }}:$IMAGE_TAG
+
+    - name: Update ECS service with new image
+      run: |
+        IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+        TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION)
+        NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" '.taskDefinition.containerDefinitions[0].image = $IMAGE' | jq '.taskDefinition | {family, containerDefinitions, volumes, networkMode, placementConstraints, taskRoleArn, executionRoleArn, requiresCompatibilities, cpu, memory}')
+        aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
+        aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
