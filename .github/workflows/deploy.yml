@@ -41,7 +41,8 @@ jobs:
     - name: Ensure ECR repository exists
       run: |
         aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY_NAME }} --region $AWS_REGION || \
-        aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY_NAME }} --region $AWS_REGION
+        aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY_NAME }} --region $AWS_REGION || \
+        echo "ECR repository exists or was created successfully."
       id: ecr
 
     - name: Get ECR URI
@@ -62,10 +63,20 @@ jobs:
         docker build -t ${{ env.ECR_URI }}:$IMAGE_TAG .
         docker push ${{ env.ECR_URI }}:$IMAGE_TAG
 
+    - name: Register or update ECS task definition
+      run: |
+        TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION || echo "")
+        if [ -z "$TASK_DEFINITION" ]; then
+          echo "Registering new task definition"
+          NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY $ECS_TASK_DEFINITION '.family=$FAMILY | .containerDefinitions=[{"name":"nestjs-app","image":$IMAGE,"essential":true,"portMappings":[{"containerPort":3333,"hostPort":3333}]}]')
+          aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
+        else
+          echo "Updating existing task definition"
+          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" '.taskDefinition.containerDefinitions[0].image = $IMAGE' | jq '.taskDefinition | {family, containerDefinitions, volumes, networkMode, placementConstraints, taskRoleArn, executionRoleArn, requiresCompatibilities, cpu, memory}')
+          aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
+        fi
+
     - name: Update ECS service with new image
       run: |
         IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
-        TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION)
-        NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" '.taskDefinition.containerDefinitions[0].image = $IMAGE' | jq '.taskDefinition | {family, containerDefinitions, volumes, networkMode, placementConstraints, taskRoleArn, executionRoleArn, requiresCompatibilities, cpu, memory}')
-        aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
         aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
