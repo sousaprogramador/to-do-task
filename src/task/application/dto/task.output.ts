@@ -4,7 +4,7 @@ export type TaskOutput = {
   id: string;
   title: string;
   description: string;
-  image: string;
+  image?: string;
   user?: {
     id: string;
     email: string;
