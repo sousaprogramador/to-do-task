@@ -14,6 +14,7 @@ resource "aws_ecr_repository" "app_repo" {
   }
 }
 
+# Tenta buscar a imagem mais recente
 data "aws_ecr_image" "latest_image" {
   repository_name = aws_ecr_repository.app_repo.name
   most_recent     = true
@@ -105,6 +106,7 @@ resource "aws_ecs_task_definition" "app" {
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = length(data.aws_iam_role.existing_ecs_task_execution_role.arn) > 0 ? data.aws_iam_role.existing_ecs_task_execution_role.arn : aws_iam_role.ecs_task_execution_role[0].arn
+
   container_definitions = jsonencode([{
     name      = "app-container"
     image     = "${aws_ecr_repository.app_repo.repository_url}:${coalesce(data.aws_ecr_image.latest_image.image_tag, "latest")}"
