@@ -151,6 +151,30 @@ resource "aws_ecs_task_definition" "this" {
   ])
 }
 
+# Verifica se a IAM Role já existe
+data "aws_iam_role" "existing_iam_role" {
+  name = "ecsTaskExecutionRole"
+}
+
+resource "aws_iam_role" "ecs_task_execution_role" {
+  count = length(data.aws_iam_role.existing_iam_role.id) == 0 ? 1 : 0
+
+  name = "ecsTaskExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
 # Cria um ECS Service
 resource "aws_ecs_service" "this" {
   name            = "my-nestjs-service"
@@ -173,24 +197,6 @@ resource "aws_ecs_service" "this" {
     aws_ecs_cluster.this,
     aws_security_group.ecs_security_group,
   ]
-}
-
-# Cria uma IAM Role para execução das tasks
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
 }
 
 output "ecr_repository_uri" {
