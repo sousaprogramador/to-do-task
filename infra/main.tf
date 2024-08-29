@@ -1,27 +1,41 @@
 provider "aws" {
-  region = var.aws_region
+  region = "sa-east-1"
 }
 
-variable "aws_region" {
-  type    = string
-  default = "sa-east-1"
+# Verifica se o repositório ECR já existe e cria se necessário
+data "aws_ecr_repository" "nestjs_app" {
+  name = "nestjs-app-repo"
 }
 
-variable "vpc_id" {
-  type    = string
-  default = "vpc-xxxxxxxx" # Substitua pelo ID do seu VPC, ou remova se estiver criando a VPC
+resource "null_resource" "create_ecr_if_not_exists" {
+  provisioner "local-exec" {
+    command = <<EOT
+      if aws ecr describe-repositories --repository-names nestjs-app-repo --region ${var.aws_region} >/dev/null 2>&1; then
+        echo "ECR repository already exists, skipping creation."
+      else
+        echo "ECR repository does not exist, creating..."
+        aws ecr create-repository --repository-name nestjs-app-repo --region ${var.aws_region}
+      fi
+    EOT
+  }
+
+  triggers = {
+    ecr_exists = data.aws_ecr_repository.nestjs_app.id != "" ? "true" : "false"
+  }
 }
 
-# Criação da VPC
+# Cria um VPC
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
 
   tags = {
     Name = "main-vpc"
   }
 }
 
-# Criação de um Internet Gateway para a VPC
+# Cria uma Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -30,7 +44,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# Criação de uma rota principal para a VPC
+# Cria uma Route Table
 resource "aws_route_table" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -44,7 +58,7 @@ resource "aws_route_table" "main" {
   }
 }
 
-# Criação de duas subnets públicas
+# Cria Subnet 1
 resource "aws_subnet" "subnet_1" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.1.0/24"
@@ -55,6 +69,7 @@ resource "aws_subnet" "subnet_1" {
   }
 }
 
+# Cria Subnet 2
 resource "aws_subnet" "subnet_2" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.2.0/24"
@@ -65,22 +80,23 @@ resource "aws_subnet" "subnet_2" {
   }
 }
 
-# Associação das subnets à tabela de rotas
+# Associa Subnet 1 com a Route Table
 resource "aws_route_table_association" "subnet_1_association" {
   subnet_id      = aws_subnet.subnet_1.id
   route_table_id = aws_route_table.main.id
 }
 
+# Associa Subnet 2 com a Route Table
 resource "aws_route_table_association" "subnet_2_association" {
   subnet_id      = aws_subnet.subnet_2.id
   route_table_id = aws_route_table.main.id
 }
 
-# Criação do Security Group utilizando a VPC criada
+# Cria um Security Group
 resource "aws_security_group" "ecs_security_group" {
+  vpc_id      = aws_vpc.main.id
   name        = "ecs-security-group"
   description = "Allow traffic to ECS tasks"
-  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port   = 3333
@@ -95,55 +111,67 @@ resource "aws_security_group" "ecs_security_group" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-# Verifica se o IAM Role já existe
-data "aws_iam_role" "existing_iam_role" {
-  name = "ecsTaskExecutionRole"
-}
-
-# Tenta obter o repositório ECR se ele existir
-data "aws_ecr_repository" "nestjs_app" {
-  name = "nestjs-app-repo"
-}
-
-# Recurso condicional que cria o ECR somente se ele não existir
-resource "null_resource" "create_ecr_if_not_exists" {
-  provisioner "local-exec" {
-    command = <<EOT
-      if aws ecr describe-repositories --repository-names nestjs-app-repo --region ${var.aws_region} >/dev/null 2>&1; then
-        echo "ECR repository already exists, skipping creation."
-      else
-        echo "ECR repository does not exist, creating..."
-        aws ecr create-repository --repository-name nestjs-app-repo --region ${var.aws_region}
-      fi
-    EOT
-  }
-
-  triggers = {
-    ecr_exists = data.aws_ecr_repository.nestjs_app.repository_url == "" ? "false" : "true"
+  tags = {
+    Name = "ecs-security-group"
   }
 }
 
-# Utilize o repositório ECR que já existe ou foi criado
-resource "aws_ecr_repository" "nestjs_app" {
-  count = data.aws_ecr_repository.nestjs_app.repository_url == "" ? 1 : 0
+# Cria um ECS Cluster
+resource "aws_ecs_cluster" "this" {
+  name = "my-nestjs-cluster"
+}
 
-  name = "nestjs-app-repo"
+# Cria uma Task Definition
+resource "aws_ecs_task_definition" "this" {
+  family                   = "my-nestjs-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "nestjs-app"
+      image     = "${data.aws_ecr_repository.nestjs_app.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 3333
+          hostPort      = 3333
+        }
+      ]
+    }
+  ])
+}
+
+# Cria um ECS Service
+resource "aws_ecs_service" "this" {
+  name            = "my-nestjs-service"
+  cluster         = aws_ecs_cluster.this.id
+  task_definition = aws_ecs_task_definition.this.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+    security_groups = [aws_security_group.ecs_security_group.id]
+  }
 
   lifecycle {
-    prevent_destroy = true
+    create_before_destroy = true
   }
+
+  depends_on = [
+    aws_ecs_task_definition.this,
+    aws_ecs_cluster.this,
+    aws_security_group.ecs_security_group,
+  ]
 }
 
-output "ecr_repository_uri" {
-  value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
-}
-
-# Criação do IAM Role condicionalmente
+# Cria uma IAM Role para execução das tasks
 resource "aws_iam_role" "ecs_task_execution_role" {
-  count = length(data.aws_iam_role.existing_iam_role.name) > 0 ? 0 : 1
-
   name = "ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
@@ -160,46 +188,12 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 }
 
-# Criação do cluster ECS
-resource "aws_ecs_cluster" "this" {
-  name = "my-nestjs-cluster"
+output "ecr_repository_uri" {
+  value       = data.aws_ecr_repository.nestjs_app.repository_url
+  description = "URI do repositório ECR"
 }
 
-# Criação da task definition ECS
-resource "aws_ecs_task_definition" "this" {
-  family                   = "my-nestjs-task"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-
-  container_definitions = jsonencode([
-    {
-      name      = "nestjs-app"
-      image     = "${data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url}:latest"
-      essential = true
-      portMappings = [
-        {
-          containerPort = 3333
-          hostPort      = 3333
-        }
-      ]
-    }
-  ])
-
-  execution_role_arn = length(aws_iam_role.ecs_task_execution_role) > 0 ? aws_iam_role.ecs_task_execution_role[0].arn : data.aws_iam_role.existing_iam_role.arn
-}
-
-# Criação do serviço ECS com subnets válidas
-resource "aws_ecs_service" "this" {
-  name            = "my-nestjs-service"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.this.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets         = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
-    security_groups = [aws_security_group.ecs_security_group.id]
-  }
+output "security_group_id" {
+  value       = aws_security_group.ecs_security_group.id
+  description = "ID do Security Group para a aplicação ECS"
 }
