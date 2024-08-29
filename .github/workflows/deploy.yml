@@ -65,9 +65,13 @@ jobs:
 
     - name: Ensure ECS cluster exists
       run: |
-        aws ecs describe-clusters --clusters $ECS_CLUSTER --region $AWS_REGION || \
-        aws ecs create-cluster --cluster-name $ECS_CLUSTER --region $AWS_REGION || \
-        echo "ECS cluster exists or was created successfully."
+        CLUSTER=$(aws ecs describe-clusters --clusters $ECS_CLUSTER --region $AWS_REGION --query 'clusters[0].clusterArn' --output text 2>/dev/null)
+        if [ "$CLUSTER" == "None" ]; then
+          echo "Cluster not found. Creating cluster $ECS_CLUSTER"
+          aws ecs create-cluster --cluster-name $ECS_CLUSTER --region $AWS_REGION
+        else
+          echo "Cluster $ECS_CLUSTER exists."
+        fi
 
     - name: Register or update ECS task definition
       run: |
