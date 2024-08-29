@@ -2,18 +2,15 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-# Declaração da variável aws_region
 variable "aws_region" {
   type    = string
   default = "sa-east-1"
 }
 
-# Tenta obter o repositório ECR se ele existir
 data "aws_ecr_repository" "nestjs_app" {
   name = "nestjs-app-repo"
 }
 
-# Recurso condicional que cria o ECR somente se ele não existir
 resource "null_resource" "create_ecr_if_not_exists" {
   provisioner "local-exec" {
     command = <<EOT
@@ -26,13 +23,11 @@ resource "null_resource" "create_ecr_if_not_exists" {
     EOT
   }
 
-  # Executa apenas se o repositório não for encontrado
   triggers = {
     ecr_exists = data.aws_ecr_repository.nestjs_app.repository_url == "" ? "false" : "true"
   }
 }
 
-# Utilize o repositório ECR que já existe ou foi criado
 resource "aws_ecr_repository" "nestjs_app" {
   count = data.aws_ecr_repository.nestjs_app.repository_url == "" ? 1 : 0
 
@@ -45,6 +40,14 @@ resource "aws_ecr_repository" "nestjs_app" {
 
 output "ecr_repository_uri" {
   value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
+}
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "main-vpc"
+  }
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -108,7 +111,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 resource "aws_security_group" "ecs_security_group" {
   name        = "ecs-security-group"
   description = "Allow traffic to ECS tasks"
-  vpc_id      = "vpc-12345678"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port   = 3333
