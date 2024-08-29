@@ -2,6 +2,12 @@ provider "aws" {
   region = "sa-east-1"
 }
 
+# Declaração da variável aws_region
+variable "aws_region" {
+  type    = string
+  default = "sa-east-1"
+}
+
 # Tenta obter o repositório ECR se ele existir
 data "aws_ecr_repository" "nestjs_app" {
   name = "nestjs-app-repo"
@@ -55,7 +61,7 @@ resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode([
     {
       name      = "nestjs-app"
-      image     = "${aws_ecr_repository.nestjs_app.repository_url}:latest"
+      image     = "${data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url}:latest"
       essential = true
       portMappings = [
         {
