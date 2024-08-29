@@ -6,7 +6,11 @@ export class TaskInMemoryRepository
 {
   items: Task[];
 
-  async findAll(userId: string): Promise<Task[]> {
+  constructor() {
+    this.items = [];
+  }
+
+  async findAll(): Promise<Task[]> {
     return this.items;
   }
 

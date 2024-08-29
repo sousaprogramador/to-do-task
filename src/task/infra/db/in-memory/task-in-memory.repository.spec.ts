@@ -32,7 +32,7 @@ describe('TaskInMemoryRepository', () => {
   });
 
   it('should find all tasks for a user', async () => {
-    const tasks = await repository.findAll('user1');
+    const tasks = await repository.findAll();
     expect(tasks).toHaveLength(3);
     expect(tasks).toEqual(
       expect.arrayContaining([
