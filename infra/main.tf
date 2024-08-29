@@ -51,7 +51,6 @@ output "ecr_repository_uri" {
 }
 
 # Verifica se o VPC já existe (se for um VPC específico que você quer verificar)
-# Se você quer criar um novo VPC, pode pular esta parte e apenas criar o recurso normalmente
 data "aws_vpc" "existing_vpc" {
   filter {
     name   = "tag:Name"
@@ -82,7 +81,7 @@ resource "aws_security_group" "ecs_security_group" {
   count       = length(data.aws_security_group.existing_sg.id) > 0 ? 0 : 1
   name        = "ecs-security-group"
   description = "Allow traffic to ECS tasks"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.main[count.index].id
 
   ingress {
     from_port   = 3333
@@ -159,7 +158,7 @@ resource "aws_ecs_service" "this" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = ["subnet-12345678", "subnet-87654321"]
-    security_groups = [aws_security_group.ecs_security_group.id]
+    subnets         = ["subnet-12345678", "subnet-87654321"] # substitua com subnets válidas
+    security_groups = [aws_security_group.ecs_security_group[0].id]
   }
 }
