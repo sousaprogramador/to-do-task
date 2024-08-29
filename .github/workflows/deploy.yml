@@ -80,7 +80,7 @@ jobs:
           echo "Updating existing task definition"
           FAMILY=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.family')
           CONTAINER_DEFINITIONS=$(echo $TASK_DEFINITION | jq -c '.taskDefinition.containerDefinitions')
-          NETWORK_MODE=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.networkMode')
+          NETWORK_MODE=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.networkMode // "awsvpc"')
           TASK_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.taskRoleArn')
           EXECUTION_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.executionRoleArn')
           REQUIRES_COMPATIBILITIES=$(echo $TASK_DEFINITION | jq -c '.taskDefinition.requiresCompatibilities // ["FARGATE"]')
