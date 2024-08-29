@@ -7,7 +7,16 @@ export namespace UpdateTaskUseCase {
     constructor(private taskRepo: TaskRepository.Repository) {}
 
     async execute(input: Input): Promise<Output> {
+      if (!input.id || !input.title || !input.description || !input.status) {
+        throw new Error(
+          'Missing required fields: id, title, description, or status',
+        );
+      }
+
       const entity = await this.taskRepo.findById(input.id);
+      if (!entity) {
+        throw new Error('Task not found');
+      }
 
       entity.update(input);
 
