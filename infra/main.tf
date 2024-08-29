@@ -1,5 +1,10 @@
 provider "aws" {
-  region = "sa-east-1"
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  description = "The AWS region to deploy resources in"
+  default     = "sa-east-1"
 }
 
 # Verifica se o repositório ECR já existe e cria se necessário
@@ -62,7 +67,7 @@ resource "aws_route_table" "main" {
 resource "aws_subnet" "subnet_1" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "sa-east-1a"
+  availability_zone = "${var.aws_region}a"
 
   tags = {
     Name = "main-subnet-1"
@@ -73,7 +78,7 @@ resource "aws_subnet" "subnet_1" {
 resource "aws_subnet" "subnet_2" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.2.0/24"
-  availability_zone = "sa-east-1b"
+  availability_zone = "${var.aws_region}b"
 
   tags = {
     Name = "main-subnet-2"
