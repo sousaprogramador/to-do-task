@@ -68,7 +68,7 @@ jobs:
         TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION || echo "")
         if [ -z "$TASK_DEFINITION" ]; then
           echo "Registering new task definition"
-          NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY $ECS_TASK_DEFINITION '.family=$FAMILY | .containerDefinitions=[{"name":"nestjs-app","image":$IMAGE,"essential":true,"portMappings":[{"containerPort":3333,"hostPort":3333}]}]')
+          NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY $ECS_TASK_DEFINITION --argjson MEMORY 512 --argjson CPU 256 '.family=$FAMILY | .containerDefinitions=[{"name":"nestjs-app","image":$IMAGE,"essential":true,"memory":$MEMORY,"cpu":$CPU,"portMappings":[{"containerPort":3333,"hostPort":3333}]}]')
           aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
         else
           echo "Updating existing task definition"
