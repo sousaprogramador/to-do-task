@@ -63,6 +63,12 @@ jobs:
         docker build -t ${{ env.ECR_URI }}:$IMAGE_TAG .
         docker push ${{ env.ECR_URI }}:$IMAGE_TAG
 
+    - name: Ensure ECS cluster exists
+      run: |
+        aws ecs describe-clusters --clusters $ECS_CLUSTER --region $AWS_REGION || \
+        aws ecs create-cluster --cluster-name $ECS_CLUSTER --region $AWS_REGION || \
+        echo "ECS cluster exists or was created successfully."
+
     - name: Register or update ECS task definition
       run: |
         TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION || echo "")
