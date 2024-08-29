@@ -189,7 +189,10 @@ resource "aws_ecs_service" "this" {
   }
 
   lifecycle {
-    create_before_destroy = true
+    ignore_changes = [
+      desired_count,
+      task_definition,
+    ]
   }
 
   depends_on = [
