@@ -33,12 +33,16 @@ resource "null_resource" "create_ecr_if_not_exists" {
   }
 }
 
+resource "aws_ecr_repository" "nestjs_app" {
+  name = "nestjs-app-repo"
+}
+
 data "aws_iam_role" "existing_iam_role" {
   name = "ecsTaskExecutionRole"
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  count = length([for id in [data.aws_iam_role.existing_iam_role.arn] : id if id != "" ? 1 : 0])
+  count = length(data.aws_iam_role.existing_iam_role.arn) > 0 ? 0 : 1
 
   name = "ecsTaskExecutionRole"
 
