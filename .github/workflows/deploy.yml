@@ -74,7 +74,7 @@ jobs:
         TASK_DEFINITION=$(aws ecs describe-task-definition --region $AWS_REGION --task-definition $ECS_TASK_DEFINITION 2>/dev/null || echo "")
         if [ -z "$TASK_DEFINITION" ]; then
           echo "Registering new task definition"
-          NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY $ECS_TASK_DEFINITION --argjson MEMORY 512 --argjson CPU 256 '.family=$FAMILY | .containerDefinitions=[{"name":"nestjs-app","image":$IMAGE,"essential":true,"memory":$MEMORY,"cpu":$CPU,"portMappings":[{"containerPort":3333,"hostPort":3333}]}] | .networkMode="awsvpc" | .requiresCompatibilities=["FARGATE"] | .cpu="256" | .memory="512"')
+          NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY $ECS_TASK_DEFINITION --argjson MEMORY 1024 --argjson CPU 512 '.family=$FAMILY | .containerDefinitions=[{"name":"nestjs-app","image":$IMAGE,"essential":true,"memory":$MEMORY,"cpu":$CPU,"portMappings":[{"containerPort":3333,"hostPort":3333}]}] | .networkMode="awsvpc" | .requiresCompatibilities=["FARGATE"] | .cpu="512" | .memory="1024"')
           aws ecs register-task-definition --region $AWS_REGION --cli-input-json "$NEW_TASK_DEFINITION"
         else
           echo "Updating existing task definition"
@@ -84,8 +84,8 @@ jobs:
           TASK_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.taskRoleArn')
           EXECUTION_ROLE_ARN=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.executionRoleArn')
           REQUIRES_COMPATIBILITIES=$(echo $TASK_DEFINITION | jq -c '.taskDefinition.requiresCompatibilities // ["FARGATE"]')
-          CPU=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.cpu')
-          MEMORY=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.memory')
+          CPU=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.cpu // "512"')
+          MEMORY=$(echo $TASK_DEFINITION | jq -r '.taskDefinition.memory // "1024"')
 
           NEW_TASK_DEFINITION=$(echo '{}' | jq --arg IMAGE "${{ env.ECR_URI }}:$IMAGE_TAG" --arg FAMILY "$FAMILY" --argjson CONTAINER_DEFINITIONS "$CONTAINER_DEFINITIONS" --arg NETWORK_MODE "$NETWORK_MODE" --arg TASK_ROLE_ARN "$TASK_ROLE_ARN" --arg EXECUTION_ROLE_ARN "$EXECUTION_ROLE_ARN" --argjson REQUIRES_COMPATIBILITIES "$REQUIRES_COMPATIBILITIES" --arg CPU "$CPU" --arg MEMORY "$MEMORY" '.family=$FAMILY | .containerDefinitions=$CONTAINER_DEFINITIONS | .containerDefinitions[0].image=$IMAGE | .networkMode=$NETWORK_MODE | .taskRoleArn=$TASK_ROLE_ARN | .executionRoleArn=$EXECUTION_ROLE_ARN | .requiresCompatibilities=$REQUIRES_COMPATIBILITIES | .cpu=$CPU | .memory=$MEMORY')
 
