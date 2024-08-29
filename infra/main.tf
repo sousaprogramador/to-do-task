@@ -14,6 +14,43 @@ output "ecr_repository_uri" {
   value = aws_ecr_repository.nestjs_app.repository_url
 }
 
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "main-vpc"
+  }
+}
+
+resource "aws_security_group" "nestjs_sg" {
+  name        = "my-nestjs-security-group"
+  description = "Security group for the NestJS application"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 3333
+    to_port     = 3333
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "my-nestjs-security-group"
+  }
+}
+
+output "security_group_id" {
+  value       = aws_security_group.nestjs_sg.id
+  description = "ID do Security Group para a aplicação ECS"
+}
+
 resource "aws_ecs_cluster" "this" {
   name = "my-nestjs-cluster"
 }
@@ -51,7 +88,7 @@ resource "aws_ecs_service" "this" {
 
   network_configuration {
     subnets         = ["subnet-12345678", "subnet-87654321"]
-    security_groups = [aws_security_group.ecs_security_group.id]
+    security_groups = [aws_security_group.nestjs_sg.id]
   }
 }
 
@@ -70,28 +107,4 @@ resource "aws_iam_role" "ecs_task_execution_role" {
       }
     ]
   })
-}
-
-resource "aws_security_group" "ecs_security_group" {
-  name        = "ecs-security-group"
-  description = "Allow traffic to ECS tasks"
-  vpc_id      = "vpc-12345678"
-
-  ingress {
-    from_port   = 3333
-    to_port     = 3333
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-output "ecr_repository_uri" {
-  value = aws_ecr_repository.nestjs_app.repository_url
 }

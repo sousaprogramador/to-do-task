@@ -12,7 +12,6 @@ env:
   ECS_TASK_DEFINITION: my-nestjs-task
   ECR_REPOSITORY_NAME: nestjs-app-repo
   CONTAINER_NAME: nestjs-app
-  SECURITY_GROUP_ID: sg-XXXXXX  # Substitua pelo ID do security group correto
 
 jobs:
   build-and-deploy:
@@ -39,6 +38,14 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: sa-east-1
+
+    - name: Run Terraform to get Security Group ID
+      run: |
+        cd infra # Diretório onde o código Terraform está localizado
+        terraform init
+        terraform apply -auto-approve
+        SECURITY_GROUP_ID=$(terraform output -raw security_group_id)
+        echo "SECURITY_GROUP_ID=$SECURITY_GROUP_ID" >> $GITHUB_ENV
 
     - name: Ensure ECR repository exists
       run: |
@@ -100,8 +107,14 @@ jobs:
 
     - name: Retrieve Subnet IDs
       run: |
-        SUBNET_IDS=$(aws ec2 describe-subnets --region $AWS_REGION --query 'Subnets[*].SubnetId' --output text | tr '\n' ',')
-        echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
+        SUBNET_IDS=$(aws ec2 describe-subnets --region $AWS_REGION --query 'Subnets[*].SubnetId' --output text)
+        if [ -z "$SUBNET_IDS" ]; then
+          echo "No subnets found in region $AWS_REGION"
+          exit 1
+        else
+          SUBNET_IDS=$(echo $SUBNET_IDS | tr ' ' ',')
+          echo "SUBNET_IDS=$SUBNET_IDS" >> $GITHUB_ENV
+        fi
 
     - name: Ensure ECS service exists
       run: |
