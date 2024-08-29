@@ -127,30 +127,6 @@ resource "aws_ecs_cluster" "this" {
   name = "my-nestjs-cluster"
 }
 
-# Cria uma Task Definition
-resource "aws_ecs_task_definition" "this" {
-  family                   = "my-nestjs-task"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "nestjs-app"
-      image     = "${data.aws_ecr_repository.nestjs_app.repository_url}:latest"
-      essential = true
-      portMappings = [
-        {
-          containerPort = 3333
-          hostPort      = 3333
-        }
-      ]
-    }
-  ])
-}
-
 # Verifica se a IAM Role já existe
 data "aws_iam_role" "existing_iam_role" {
   name = "ecsTaskExecutionRole"
@@ -173,6 +149,30 @@ resource "aws_iam_role" "ecs_task_execution_role" {
       }
     ]
   })
+}
+
+# Cria uma Task Definition
+resource "aws_ecs_task_definition" "this" {
+  family                   = "my-nestjs-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = length(data.aws_iam_role.existing_iam_role.id) == 0 ? aws_iam_role.ecs_task_execution_role[0].arn : data.aws_iam_role.existing_iam_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "nestjs-app"
+      image     = "${data.aws_ecr_repository.nestjs_app.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 3333
+          hostPort      = 3333
+        }
+      ]
+    }
+  ])
 }
 
 # Cria um ECS Service
