@@ -50,16 +50,21 @@ output "ecr_repository_uri" {
   value = data.aws_ecr_repository.nestjs_app.repository_url != "" ? data.aws_ecr_repository.nestjs_app.repository_url : aws_ecr_repository.nestjs_app[0].repository_url
 }
 
-# Verifica se o VPC já existe
+# Verifica se o VPC já existe com mais filtros específicos
 data "aws_vpc" "existing_vpc" {
   filter {
     name   = "tag:Name"
-    values = ["main-vpc"]
+    values = ["main-vpc"] # O nome exato do VPC que você está procurando
   }
 
   filter {
     name   = "cidr-block"
-    values = ["10.0.0.0/16"] # Ajuste para o CIDR correto do seu VPC
+    values = ["10.0.0.0/16"] # Ajuste para o CIDR do seu VPC específico
+  }
+
+  filter {
+    name   = "isDefault"
+    values = ["false"] # Certifique-se de que está filtrando apenas VPCs não padrão
   }
 }
 
