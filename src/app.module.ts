@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { UserModule } from './user/infra/nest/user.module';
 import { TaskModule } from './task/infra/nest/task.module';
 import { AuthModule } from './auth/auth.module';
+import { HealthModule } from './health/health.module';
 
 dotenv.config();
 const uri = process.env.DATABASE_CONNECTION;
@@ -15,6 +16,7 @@ const uri = process.env.DATABASE_CONNECTION;
     UserModule,
     TaskModule,
     AuthModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
