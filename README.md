@@ -1,73 +1,125 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Nome do Projeto
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Descrição breve do projeto e seus objetivos.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Sumário
 
-## Description
+- [Visão Geral](#visão-geral)
+- [Arquitetura](#arquitetura)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação](#instalação)
+- [Configuração](#configuração)
+- [Rodando o Projeto](#rodando-o-projeto)
+- [Infraestrutura](#infraestrutura)
+- [Padrões de Código](#padrões-de-código)
+- [Contribuição](#contribuição)
+- [Licença](#licença)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Visão Geral
 
-## Installation
+Este projeto é uma aplicação construída com [Nest.js](https://nestjs.com/), utilizando [MongoDB](https://www.mongodb.com/) como banco de dados, e seguindo princípios de arquitetura hexagonal, SOLID e Clean Code.
 
-```bash
-$ yarn install
-```
+## Arquitetura
 
-## Running the app
+A aplicação segue a Arquitetura Hexagonal, onde a lógica de negócios é independente de detalhes externos, como frameworks, bancos de dados ou interfaces de usuário. Isso facilita a manutenção, teste e escalabilidade.
 
-```bash
-# development
-$ yarn run start
+### Principais Componentes
 
-# watch mode
-$ yarn run start:dev
+- **Camada de Domínio**: Contém as regras de negócios e entidades.
+- **Camada de Aplicação**: Orquestra o fluxo entre as camadas de domínio e infraestrutura.
+- **Camada de Infraestrutura**: Contém implementações de detalhes, como repositórios (MongoDB), provedores de serviços externos, etc.
+- **Camada de Interface (Controllers)**: Ponto de entrada da aplicação, onde as requisições são recebidas.
 
-# production mode
-$ yarn run start:prod
-```
+## Pré-requisitos
 
-## Test
+- [Node.js](https://nodejs.org/) v14.x ou superior
+- [Nest.js CLI](https://docs.nestjs.com/cli/overview)
+- [Docker](https://www.docker.com/) (para rodar o MongoDB via Docker)
+- [Terraform](https://www.terraform.io/) v1.9.5
+- Conta na AWS (para provisionamento de infraestrutura)
+
+## Instalação
+
+Clone o repositório:
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+git clone https://github.com/seu-usuario/nome-do-repositorio.git
+cd nome-do-repositorio
 ```
 
-## Support
+Instale as dependências:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm install
+```
 
-## Stay in touch
+## Configuração
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
-## License
+```env
+DB_URI=mongodb://localhost:27017/seu-banco-de-dados
+JWT_ACCESS_SECRET=sua-chave-secreta
+JWT_REFRESH_SECRET=sua-chave-secreta
+AWS_ACCESS_KEY_ID=sua-access-key
+AWS_SECRET_ACCESS_KEY=sua-secret-key
+```
 
-Nest is [MIT licensed](LICENSE).
+Para rodar o MongoDB localmente via Docker, execute:
+
+```bash
+docker-compose up -d
+```
+
+## Rodando o Projeto
+
+Para rodar a aplicação em desenvolvimento:
+
+```bash
+npm run start:dev
+```
+
+A aplicação estará disponível em `http://localhost:3000`.
+
+## Infraestrutura
+
+A infraestrutura é gerenciada utilizando Terraform. Os arquivos de configuração estão na pasta `infra`.
+
+### Provisionando a Infraestrutura
+
+1. Inicialize o Terraform:
+
+   ```bash
+   cd infra
+   terraform init
+   ```
+
+2. Configure as variáveis no arquivo `terraform.tfvars`.
+
+3. Aplique as configurações para provisionar os recursos na AWS:
+
+   ```bash
+   terraform apply
+   ```
+
+## Padrões de Código
+
+Este projeto segue os princípios de SOLID e Clean Code para garantir legibilidade, reusabilidade e manutenção do código. Algumas práticas adotadas incluem:
+
+- **Injeção de Dependências**: Utilizando o sistema de providers do Nest.js.
+- **Interfaces e Abstrações**: Definição de contratos claros entre as camadas.
+- **Separação de Responsabilidades**: Cada classe ou função tem uma única responsabilidade.
+
+## Contribuição
+
+Para contribuir com o projeto:
+
+1. Crie um fork do repositório.
+2. Crie uma branch para sua feature ou correção de bug: `git checkout -b minha-feature`.
+3. Faça commit das suas alterações: `git commit -m 'Minha nova feature'`.
+4. Envie suas alterações: `git push origin minha-feature`.
+5. Abra um pull request.
+
+## Licença
+
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
