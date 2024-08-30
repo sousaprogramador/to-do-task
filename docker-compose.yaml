@@ -9,24 +9,23 @@ services:
       - '3333:3333'
     environment:
       NODE_ENV: dev
-      MONGO_URI: mongodb://mongo:27017/mydatabase
-      JWT_ACCESS_SECRET: sua_chave_secreta_de_acesso
-      JWT_REFRESH_SECRET: sua_chave_secreta_de_refresh
+      MONGO_URI: mongodb://admin:admin@mongo:27017/admin?authSource=admin
+      JWT_ACCESS_SECRET: 123456ab
+      JWT_REFRESH_SECRET: 123456ab
     volumes:
       - .:/usr/src/app
     depends_on:
       - mongo
 
   mongo:
-    image: mongo:6.0
-    container_name: mongo
     ports:
       - '27017:27017'
-    volumes:
-      - mongo-data:/data/db
+    container_name: mongo
+    restart: always
+    logging:
+      options:
+        max-size: 1g
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-
-volumes:
-  mongo-data:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    image: mongo
