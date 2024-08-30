@@ -110,6 +110,10 @@ Este projeto segue os princípios de SOLID e Clean Code para garantir legibilida
 - **Interfaces e Abstrações**: Definição de contratos claros entre as camadas.
 - **Separação de Responsabilidades**: Cada classe ou função tem uma única responsabilidade.
 
+## Documentação
+
+A documentação da API está disponível na URL padrão: `http://localhost:3000/docs`.
+
 ## Contribuição
 
 Para contribuir com o projeto:
