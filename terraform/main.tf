@@ -17,6 +17,10 @@ resource "aws_ecr_repository" "app_repo" {
   tags = {
     Name = "my-app-repo"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 data "aws_iam_role" "existing_ecs_task_execution_role" {
@@ -27,6 +31,10 @@ resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   tags = {
     Name = "main-vpc"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -39,12 +47,20 @@ resource "aws_subnet" "public" {
   tags = {
     Name = "main-subnet-${count.index}"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
   tags = {
     Name = "main-gw"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -57,16 +73,28 @@ resource "aws_route_table" "public" {
   tags = {
     Name = "main-rt-public"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_route_table_association" "public" {
   count          = length(aws_subnet.public)
   subnet_id      = element(aws_subnet.public.*.id, count.index)
   route_table_id = aws_route_table.public.id
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_ecs_cluster" "main" {
   name = "main-ecs-cluster"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
@@ -87,6 +115,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   tags = {
     Name = "ecsTaskExecutionRole"
   }
+
   lifecycle {
     prevent_destroy = true
   }
@@ -115,6 +144,10 @@ resource "aws_ecs_task_definition" "app" {
       hostPort      = 80
     }]
   }])
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_security_group" "ecs_sg" {
@@ -134,6 +167,10 @@ resource "aws_security_group" "ecs_sg" {
   tags = {
     Name = "ecs-sg"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_lb" "app" {
@@ -144,6 +181,10 @@ resource "aws_lb" "app" {
   subnets            = aws_subnet.public.*.id
   tags = {
     Name = "app-lb"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -163,6 +204,10 @@ resource "aws_lb_target_group" "app" {
   tags = {
     Name = "app-tg"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_lb_listener" "app" {
@@ -172,6 +217,10 @@ resource "aws_lb_listener" "app" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.app.arn
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -191,4 +240,8 @@ resource "aws_ecs_service" "app" {
     container_port   = 80
   }
   depends_on = [aws_lb_listener.app]
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

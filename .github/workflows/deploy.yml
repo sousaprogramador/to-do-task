@@ -27,19 +27,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Set up Terraform v1.9.5
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_version: 1.9.5
-
-    - name: Terraform Init
-      run: terraform init
-      working-directory: ./terraform
-
-    - name: Terraform Apply
-      run: terraform apply -auto-approve -var "image_tag=${{ env.IMAGE_TAG }}"
-      working-directory: ./terraform
-
     - name: Create .env file
       run: |
         echo "NODE_ENV=production" >> .env
