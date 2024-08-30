@@ -3,7 +3,7 @@ name: Deploy to AWS ECS
 on:
   push:
     branches:
-      - main#
+      - main
 
 jobs:
   deploy:
@@ -31,7 +31,7 @@ jobs:
       run: |
         echo "NODE_ENV=production" >> .env
         echo "ANOTHER_ENV_VAR=${{ secrets.ANOTHER_ENV_VAR }}" >> .env
-        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        echo "MONGO_URI=${{ secrets.DATABASE_URL }}" >> .env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
 
     - name: Log in to Amazon ECR
