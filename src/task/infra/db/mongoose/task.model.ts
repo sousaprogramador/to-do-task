@@ -7,7 +7,6 @@ export type TaskDocument = Task & Document;
 @Schema()
 export class Task {
   @Transform(({ obj }) => obj._id.toString(), { toClassOnly: true })
-  @Prop()
   id: string;
 
   @Prop()
@@ -32,3 +31,21 @@ export class Task {
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task);
+
+TaskSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+  },
+});
+
+TaskSchema.set('toObject', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+  },
+});
