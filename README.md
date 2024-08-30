@@ -43,8 +43,8 @@ A aplicação segue a Arquitetura Hexagonal, onde a lógica de negócios é inde
 Clone o repositório:
 
 ```bash
-git clone https://github.com/seu-usuario/nome-do-repositorio.git
-cd nome-do-repositorio
+git clone git@github.com:sousaprogramador/to-do-task.git
+cd to-do-task
 ```
 
 Instale as dependências:
