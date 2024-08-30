@@ -9,7 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 
 dotenv.config();
-const uri = process.env.DATABASE_CONNECTION;
+const uri = process.env.MONGO_URI;
 @Module({
   imports: [
     MongooseModule.forRoot(uri, {}),
