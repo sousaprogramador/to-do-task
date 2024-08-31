@@ -59,6 +59,7 @@ export class AuthController {
       const output = await this.createUseCase.execute(createUserDto);
       return AuthController.UserPresenterToResponse(output);
     } catch (error) {
+      console.log('error', error);
       throw new BadRequestException('Usuario ja registrado');
     }
   }

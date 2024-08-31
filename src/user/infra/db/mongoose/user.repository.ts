@@ -26,10 +26,12 @@ export class UserMongooseRepository
   }
 
   async create(entity: User): Promise<void> {
-    await this.userRepository.create({
+    const userObject = {
       ...entity.toJSON(),
       password: await bcrypt.hash(entity.toJSON().password, 10),
-    });
+    };
+    delete userObject.id;
+    await this.userRepository.create(userObject);
   }
 
   async update(entity: User): Promise<void> {
