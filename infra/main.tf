@@ -19,7 +19,7 @@ resource "aws_ecr_repository" "app_repo" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -34,7 +34,7 @@ resource "aws_vpc" "main" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -49,7 +49,7 @@ resource "aws_subnet" "public" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -60,7 +60,7 @@ resource "aws_internet_gateway" "gw" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -75,7 +75,7 @@ resource "aws_route_table" "public" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -85,7 +85,7 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -93,7 +93,7 @@ resource "aws_ecs_cluster" "main" {
   name = "main-ecs-cluster"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -117,7 +117,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -146,7 +146,7 @@ resource "aws_ecs_task_definition" "app" {
   }])
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -169,7 +169,7 @@ resource "aws_security_group" "ecs_sg" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -184,7 +184,7 @@ resource "aws_lb" "app" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -206,7 +206,7 @@ resource "aws_lb_target_group" "app" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -220,7 +220,7 @@ resource "aws_lb_listener" "app" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -242,6 +242,6 @@ resource "aws_ecs_service" "app" {
   depends_on = [aws_lb_listener.app]
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
