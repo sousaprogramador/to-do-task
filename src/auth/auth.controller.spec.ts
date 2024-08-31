@@ -17,34 +17,17 @@ describe('AuthController', () => {
   let createUserUseCase: CreateUserUseCase.UseCase;
   let getTokensUseCase: GetTokensUseCase.UseCase;
 
-  const mockGetUserUseCase = {
-    execute: jest.fn(),
-  };
-
-  const mockCreateUserUseCase = {
-    execute: jest.fn(),
-  };
-
-  const mockGetTokensUseCase = {
-    execute: jest.fn(),
-  };
+  const mockGetUserUseCase = { execute: jest.fn() };
+  const mockCreateUserUseCase = { execute: jest.fn() };
+  const mockGetTokensUseCase = { execute: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
-        {
-          provide: GetUserUseCase.UseCase,
-          useValue: mockGetUserUseCase,
-        },
-        {
-          provide: CreateUserUseCase.UseCase,
-          useValue: mockCreateUserUseCase,
-        },
-        {
-          provide: GetTokensUseCase.UseCase,
-          useValue: mockGetTokensUseCase,
-        },
+        { provide: GetUserUseCase.UseCase, useValue: mockGetUserUseCase },
+        { provide: CreateUserUseCase.UseCase, useValue: mockCreateUserUseCase },
+        { provide: GetTokensUseCase.UseCase, useValue: mockGetTokensUseCase },
       ],
     }).compile();
 
@@ -64,14 +47,12 @@ describe('AuthController', () => {
         email: 'john.doe@example.com',
         password: 'password123',
       };
-
       const userOutput: UserOutput = {
-        _id: '1',
+        id: '1',
         name: 'John Doe',
         email: 'john.doe@example.com',
         password: await bcrypt.hash(loginDto.password, 10),
       };
-
       const tokens = {
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
@@ -86,16 +67,15 @@ describe('AuthController', () => {
         email: loginDto.email,
       });
       expect(getTokensUseCase.execute).toHaveBeenCalledWith({
-        id: userOutput._id,
+        id: userOutput.id,
         name: userOutput.name,
         email: userOutput.email,
-        avata: userOutput.avatar,
       });
       expect(result).toEqual({
         ...tokens,
         exp: expect.any(Number),
         user: {
-          _id: userOutput._id,
+          id: userOutput.id,
           name: userOutput.name,
           email: userOutput.email,
         },
@@ -107,9 +87,7 @@ describe('AuthController', () => {
         email: 'john.doe@example.com',
         password: 'password123',
       };
-
       mockGetUserUseCase.execute.mockResolvedValue(null);
-
       await expect(controller.login(loginDto)).rejects.toThrow(
         BadRequestException,
       );
@@ -123,16 +101,14 @@ describe('AuthController', () => {
         email: 'john.doe@example.com',
         password: 'password123',
       };
-
       const userOutput: UserOutput = {
-        _id: '1',
+        id: '1',
         name: 'John Doe',
         email: 'john.doe@example.com',
         password: await bcrypt.hash('wrongpassword', 10),
       };
 
       mockGetUserUseCase.execute.mockResolvedValue(userOutput);
-
       await expect(controller.login(loginDto)).rejects.toThrow(
         BadRequestException,
       );
@@ -143,22 +119,20 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('should return the user presenter if registration is successful', async () => {
+    it('should return the user if registration is successful', async () => {
       const createUserDto: CreateUserDto = {
         name: 'John Doe',
         email: 'john.doe@example.com',
         password: 'password123',
       };
-
       const userOutput: UserOutput = {
-        _id: '1',
+        id: '1',
         name: 'John Doe',
         email: 'john.doe@example.com',
         password: '',
       };
 
       mockCreateUserUseCase.execute.mockResolvedValue(userOutput);
-
       const result = await controller.register(createUserDto);
 
       expect(createUserUseCase.execute).toHaveBeenCalledWith(createUserDto);
@@ -178,7 +152,6 @@ describe('AuthController', () => {
       mockCreateUserUseCase.execute.mockRejectedValue(
         new Error('User already exists'),
       );
-
       await expect(controller.register(createUserDto)).rejects.toThrow(
         BadRequestException,
       );

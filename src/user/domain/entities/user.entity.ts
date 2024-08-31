@@ -1,27 +1,38 @@
+import { UserValidatorFactory } from '../validators/user.validators';
+
 export type UserProperties = {
-  _id?: string;
+  id?: string;
   name: string;
   email: string;
   password?: string;
   avatar?: string;
 };
 
-export type UserPropsJson = Required<{ _id: string } & UserProperties>;
+export type UserPropsJson = Required<{ id: string } & UserProperties>;
 
 export class User {
   constructor(public readonly props: UserProperties) {}
 
   update(props: UserProperties): void {
+    this.validate(props);
     this.name = props.name;
     this.email = props.email;
   }
 
-  get _id() {
-    return this.props._id;
+  private validate(props: UserProperties): void {
+    const validator = UserValidatorFactory.create();
+    const isValid = validator.validate(props);
+    if (!isValid) {
+      throw new Error('Validation failed for the provided properties');
+    }
   }
 
-  private set _id(value) {
-    this.props._id = value;
+  get id() {
+    return this.props.id;
+  }
+
+  private set id(value) {
+    this.props.id = value;
   }
 
   get name() {

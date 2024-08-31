@@ -24,7 +24,7 @@ describe('UserMongooseRepository', () => {
 
   it('should find all users', async () => {
     const mockUsers = [
-      { _id: '1', email: 'user1@example.com', name: 'User One' },
+      { id: '1', email: 'user1@example.com', name: 'User One' },
     ];
     (userModel.find as jest.Mock).mockResolvedValue(mockUsers);
 
@@ -34,7 +34,7 @@ describe('UserMongooseRepository', () => {
   });
 
   it('should find a user by id', async () => {
-    const mockUser = { _id: '1', email: 'user1@example.com', name: 'User One' };
+    const mockUser = { id: '1', email: 'user1@example.com', name: 'User One' };
     (userModel.findOne as jest.Mock).mockResolvedValue(mockUser);
 
     const user = await repository.findById('1');
@@ -43,7 +43,7 @@ describe('UserMongooseRepository', () => {
   });
 
   it('should find a user by email', async () => {
-    const mockUser = { _id: '1', email: 'user1@example.com', name: 'User One' };
+    const mockUser = { id: '1', email: 'user1@example.com', name: 'User One' };
     (userModel.findOne as jest.Mock).mockResolvedValue(mockUser);
 
     const user = await repository.findByEmail('user1@example.com');
@@ -63,7 +63,7 @@ describe('UserMongooseRepository', () => {
     (userModel.findByIdAndUpdate as jest.Mock).mockResolvedValue(mockUser);
 
     const entity = new User({
-      _id: '1',
+      id: '1',
       email: 'user1@example.com',
       name: 'User One',
       password: 'secret',
@@ -71,7 +71,7 @@ describe('UserMongooseRepository', () => {
     await repository.update(entity);
 
     expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
-      entity._id,
+      entity.id,
       entity.toJSON(),
       {
         new: true,

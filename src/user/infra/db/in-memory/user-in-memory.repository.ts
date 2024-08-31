@@ -13,7 +13,7 @@ export class UserInMemoryRepository
   }
 
   async findById(id: string): Promise<User> {
-    const User = this.items.find((i) => i._id === id);
+    const User = this.items.find((i) => i.id === id);
     return User;
   }
 
@@ -27,12 +27,12 @@ export class UserInMemoryRepository
   }
 
   async update(entity: User): Promise<string | void> {
-    const indexFound = this.items.findIndex((i) => i._id === entity._id);
+    const indexFound = this.items.findIndex((i) => i.id === entity.id);
     this.items[indexFound] = entity;
   }
 
   async delete(id: string): Promise<void> {
-    const indexFound = this.items.findIndex((i) => i._id === id);
+    const indexFound = this.items.findIndex((i) => i.id === id);
     this.items.splice(indexFound, 1);
   }
 }

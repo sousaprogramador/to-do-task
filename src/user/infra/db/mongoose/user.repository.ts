@@ -33,7 +33,7 @@ export class UserMongooseRepository
   }
 
   async update(entity: User): Promise<void> {
-    await this.userRepository.findByIdAndUpdate(entity._id, entity.toJSON(), {
+    await this.userRepository.findByIdAndUpdate(entity.id, entity.toJSON(), {
       new: true,
     });
   }

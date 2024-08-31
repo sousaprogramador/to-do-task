@@ -38,7 +38,7 @@ describe('UserController', () => {
     };
 
     const userOutput: UserOutput = {
-      _id: '1',
+      id: '1',
       name: 'John Doe',
       email: 'john.doe@example.com',
       password: '',

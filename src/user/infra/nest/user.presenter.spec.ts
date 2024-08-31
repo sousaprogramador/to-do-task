@@ -4,7 +4,7 @@ import { UserOutput } from '../../application/dto/user.output';
 describe('UserPresenter', () => {
   it('should correctly map UserOutput to UserPresenter', () => {
     const userOutput: UserOutput = {
-      _id: '1',
+      id: '1',
       name: 'John Doe',
       email: 'john.doe@example.com',
       password: '',
@@ -18,7 +18,7 @@ describe('UserPresenter', () => {
 
   it('should handle missing optional fields', () => {
     const userOutput: UserOutput = {
-      _id: '1',
+      id: '1',
       name: 'John Doe',
       email: 'john.doe@example.com',
       password: '',

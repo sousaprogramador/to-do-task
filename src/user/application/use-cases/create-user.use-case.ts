@@ -2,6 +2,8 @@ import { UseCase as DefaultUseCase } from '../../../common';
 import { User } from '../../domain/entities';
 import { UserRepository } from '../../domain';
 import { UserOutput, UserOutputMapper } from '../dto/user.output';
+import { ValidationError } from '../../../common/errors/validation-error';
+import { ConflictError } from '../../../common/errors/conflict-error';
 
 export namespace CreateUserUseCase {
   export class UseCase implements DefaultUseCase<Input, Output> {
@@ -9,16 +11,17 @@ export namespace CreateUserUseCase {
 
     async execute(input: Input): Promise<Output> {
       if (!input.name || !input.email || !input.password) {
-        throw new Error('Missing required fields: name, email, password');
+        throw new ValidationError(
+          'Missing required fields: name, email, password',
+        );
       }
 
       const existingUser = await this.userRepository.findByEmail(input.email);
       if (existingUser) {
-        throw new Error('Email already in use');
+        throw new ConflictError('Email already in use');
       }
 
       const entity = new User(input);
-
       await this.userRepository.create(entity);
 
       return UserOutputMapper.toOutput(entity);

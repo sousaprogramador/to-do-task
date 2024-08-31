@@ -40,7 +40,7 @@ export class AuthController {
     }
 
     const tokens = await this.getTokensUseCase.execute({
-      id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
       avata: user.avatar,
